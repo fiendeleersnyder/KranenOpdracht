@@ -1,14 +1,29 @@
 public class Container {
     private int gewicht;
     private int lengte;
-    private int locatie_x;
-    private int locatie_y;
+    private Slot start;
 
-    public Container(int gewicht, int lengte, int locatie_x, int locatie_y) {
+    public Slot getStart() {
+        return start;
+    }
+
+    public void setStart(Slot start) {
+        this.start = start;
+    }
+
+    public Slot getEind() {
+        return eind;
+    }
+
+    public void setEind(Slot eind) {
+        this.eind = eind;
+    }
+
+    private Slot eind;
+
+    public Container(int gewicht, int lengte) {
         this.gewicht = gewicht;
         this.lengte = lengte;
-        this.locatie_x = locatie_x;
-        this.locatie_y = locatie_y;
     }
 
     public int getGewicht() {
@@ -27,19 +42,4 @@ public class Container {
         this.lengte = lengte;
     }
 
-    public int getLocatie_x() {
-        return locatie_x;
-    }
-
-    public void setLocatie_x(int locatie_x) {
-        this.locatie_x = locatie_x;
-    }
-
-    public int getLocatie_y() {
-        return locatie_y;
-    }
-
-    public void setLocatie_y(int locatie_y) {
-        this.locatie_y = locatie_y;
-    }
 }
