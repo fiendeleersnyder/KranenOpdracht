@@ -9,6 +9,12 @@ import javax.swing.*;
 public class Main {
     public static void main(String args[]) {
         JSONParser jsonParser = new JSONParser();
+        ArrayList<Slot> slots = new ArrayList<>();
+        ArrayList<Container> containers = new ArrayList<>();
+        ArrayList<Assignment> assignments = new ArrayList<>();
+
+        int max_x = 0;
+        int max_y = 0;
 
         try (FileReader reader = new FileReader("data/terminal_4_3.json")){
             Object obj = jsonParser.parse(reader);
@@ -16,15 +22,12 @@ public class Main {
 
             String name = (String)jsonObject.get("name");
 
-            ArrayList<Slot> slots = new ArrayList<>();
             JSONArray slotList = (JSONArray) jsonObject.get("slots");
-            slotList.forEach( data -> parseSlots( (JSONObject) data, slots ) );
+            slotList.forEach( data -> parseSlots( (JSONObject) data, slots) );
 
-            ArrayList<Container> containers = new ArrayList<>();
             JSONArray containerList = (JSONArray) jsonObject.get("containers");
             containerList.forEach( data -> parseContainer( (JSONObject) data, containers ) );
 
-            ArrayList<Assignment> assignments = new ArrayList<>();
             JSONArray assignmentList = (JSONArray) jsonObject.get("assignments");
             assignmentList.forEach( data -> parseAssignment( (JSONObject) data, assignments ,slots) );
 
@@ -36,16 +39,36 @@ public class Main {
             e.printStackTrace();
         }
 
+        for (Slot slot: slots) {
+            if (slot.getX() > max_x) {
+                max_x = slot.getX();
+            }
+            if (slot.getY() > max_y) {
+                max_y = slot.getY();
+            }
+        }
+
+        final int ROWS = max_y+1; //y
+        final int COLS = max_x+1; //x
 
         CheckerBoardJavaExample CheckerBoard = new CheckerBoardJavaExample(ROWS,COLS);
         final int SIZE = 600;
         CheckerBoard.setSize(SIZE, SIZE);
-        JPanel leeg = new JPanel();
-        leeg.setSize(300, 600);
+        JPanel legende = new JPanel();
+        legende.setSize(300, 600);
         CheckerBoard.setVisible(true);
-        JSplitPane pane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, CheckerBoard, leeg);
+        JSplitPane pane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, CheckerBoard, legende);
         pane.setSize(600,600);
         pane.setVisible(true);
+
+
+        JTextArea textArea = new JTextArea("Wit: 0 containers" + '\n' + "Paars: 1 container" + '\n' + "Donkerblauw: 2 containers"
+                + '\n' + "Lichtblauw: 3 containers" + '\n' + "Groen: 4 containers" + '\n' + "Geel: 5 containers"
+                + '\n' + "Oranje: 6 containers" + '\n' + "Rood:  7 containers" + + '\n' + "Roos: 8 containers"
+                + '\n' + "Grijs: 9 containers" + '\n' + "Zwart: 10 containers");
+
+        textArea.setEditable(false);
+        legende.add(textArea);
 
         JFrame frame = new JFrame();
         frame.add(pane);

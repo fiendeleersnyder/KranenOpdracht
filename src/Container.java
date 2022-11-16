@@ -1,8 +1,14 @@
 public class Container {
+    private int id;
     private int gewicht;
     private int lengte;
     private Slot start;
     private Slot eind;
+
+    public Container(int id, int lengte) {
+        this.id = id;
+        this.lengte = lengte;
+    }
 
     public Slot getStart() { return start; }
 
