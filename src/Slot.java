@@ -1,16 +1,17 @@
+import java.util.Stack;
+
 public class Slot {
-    private int id,x,y,hoogte;
+    private int id,x,y;
+    private Stack hoogte;
 
     public Slot(int id, int x, int y) {
         this.id = id;
         this.x = x;
         this.y = y;
-        this.hoogte = 0;
+        this.hoogte = new Stack();
     }
 
-    public int getId() {
-        return id;
-    }
+    public int getId() { return id; }
 
     public void setId(int id) {
         this.id = id;
@@ -33,10 +34,12 @@ public class Slot {
     }
 
     public int getHoogte() {
-        return hoogte;
+        return hoogte.size();
     }
 
-    public void setHoogte(int hoogte) {
-        this.hoogte = hoogte;
+    public void voegContainerToe(Container c) {
+        this.hoogte.push(c);
     }
+
+    public void verwijderContainer() { this.hoogte.pop(); }
 }
