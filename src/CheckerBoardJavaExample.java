@@ -55,7 +55,7 @@ public class CheckerBoardJavaExample extends JPanel {
     // functie wordt opgeroepen voor de plaats waar container weggaat en voor plaats waar container komt te staan
     //kleur is int die hoogte weegeeft na aanpassing
     public void veranderKleur(int vakjeX, int vakjeY, int kleur){
-        int vak = vakjeY * ROWS + vakjeX;
+        int vak = vakjeX * ROWS + vakjeY;
         this.pnl1[vak].setBackground(kleuren.get(kleur));
 
     }

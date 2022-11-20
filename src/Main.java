@@ -1,6 +1,9 @@
 import java.io.*;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.json.simple.*;
 import org.json.simple.parser.*;
@@ -11,7 +14,7 @@ public class Main {
         JSONParser jsonParser = new JSONParser();
         ArrayList<Slot> slots = new ArrayList<>();
         ArrayList<Container> containers = new ArrayList<>();
-        ArrayList<Assignment> assignments = new ArrayList<>();
+        Set<Assignment> assignments = new HashSet<>();
 
         int max_x = 0;
         int max_y = 0;
@@ -31,11 +34,7 @@ public class Main {
             JSONArray assignmentList = (JSONArray) jsonObject.get("assignments");
             assignmentList.forEach( data -> parseAssignment( (JSONObject) data, assignments ,slots) );
 
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (ParseException e) {
+        } catch (ParseException | IOException e) {
             e.printStackTrace();
         }
 
@@ -62,10 +61,18 @@ public class Main {
         pane.setVisible(true);
 
 
-        JTextArea textArea = new JTextArea("Wit: 0 containers" + '\n' + "Paars: 1 container" + '\n' + "Donkerblauw: 2 containers"
-                + '\n' + "Lichtblauw: 3 containers" + '\n' + "Groen: 4 containers" + '\n' + "Geel: 5 containers"
-                + '\n' + "Oranje: 6 containers" + '\n' + "Rood:  7 containers" + + '\n' + "Roos: 8 containers"
-                + '\n' + "Grijs: 9 containers" + '\n' + "Zwart: 10 containers");
+        JTextArea textArea = new JTextArea("""
+                Wit: 0 containers
+                Paars: 1 container
+                Donkerblauw: 2 containers
+                Lichtblauw: 3 containers
+                Groen: 4 containers
+                Geel: 5 containers
+                Oranje: 6 containers
+                Rood:  7 containers
+                Roos: 8 containers
+                Grijs: 9 containers
+                Zwart: 10 containers""");
 
         textArea.setEditable(false);
         legende.add(textArea);
@@ -75,6 +82,18 @@ public class Main {
         frame.setSize(600, 600);
         frame.setTitle("Kranenopdracht");
         frame.setVisible(true);
+
+        setStartPositie(assignments, containers, CheckerBoard);
+
+        ArrayList<Slot> toegewezenSlots = new ArrayList<>();
+
+        for (Slot slot: slots) {
+            if (slot.getId() == 2 || slot.getId() == 3) {
+                toegewezenSlots.add(slot);
+            }
+        }
+
+        verplaatsContainer(containers.get(3), slots, toegewezenSlots, CheckerBoard);
 
         /*CheckerBoard.veranderKleur(5, 3, 0);
         CheckerBoard.veranderKleur(5, 4, 1);
@@ -88,7 +107,7 @@ public class Main {
         CheckerBoard.veranderKleur(5, 12, 9);
         CheckerBoard.veranderKleur(5, 31, 10);*/
 
-        containers.sort(Comparator.comparing(Container::getLengte));
+        /*containers.sort(Comparator.comparing(Container::getLengte));
 
         ArrayList<Slot> slotlist;
         boolean plaatsen = true;
@@ -105,7 +124,7 @@ public class Main {
                                 plaatsen = false;
                             }
                         }
-                        if (!plaatsen) {
+                        if (plaatsen) {
                             //controleren of start en eindslot van container al geset zijn
                             // zo nee: container moet gewoon geplaatst worden en éénmaal kleuren zetten
                             // zo ja: container moet verplaatst worden dus kleuren moeten zowel verwijderen als toevoegen
@@ -134,7 +153,7 @@ public class Main {
                     }
                 }
             }
-        }
+        }*/
 
     }
 
@@ -151,19 +170,80 @@ public class Main {
         containers.add(new Container(id, lengte));
     }
 
-    private static void parseAssignment(JSONObject data, ArrayList<Assignment> assignement, ArrayList<Slot> slotLijst){
+    private static void parseAssignment(JSONObject data, Set<Assignment> assignement, ArrayList<Slot> slotLijst){
         JSONArray slotList = (JSONArray) data.get("slot_id");
         int container_id = ((Long) data.get("container_id")).intValue();
 
+        Assignment assignment = new Assignment(container_id);
+
         for(int j=0;j<slotList.size();j++){
             int id = ((Long) slotList.get(j)).intValue();
-            Assignment a = new Assignment(container_id);
             for(int i=0; i<slotLijst.size(); i++){
                 if(slotLijst.get(i).getId()==id){
-                    a.addSlot(slotLijst.get(i));
+                    assignment.addSlot(slotLijst.get(i));
+                    break;
                 }
             }
-            assignement.add(a);
         }
+        assignement.add(assignment);
+   }
+
+   private static void setStartPositie(Set<Assignment> assignments, ArrayList<Container> containers, CheckerBoardJavaExample checkerboard) {
+       containers.sort(Comparator.comparing(Container::getLengte));
+
+       ArrayList<Slot> slotlist;
+       boolean plaatsen = true;
+       Set<Assignment> wachtlijst = assignments;
+       int hoogteStart;
+
+       while (!wachtlijst.isEmpty()) {
+           for (Container c : containers) {
+               ArrayList<Assignment> executed_assignments = new ArrayList<>();
+               for (Assignment assignment : wachtlijst) {
+                   if (assignment.getContainer_id() == c.getId()) {
+                       slotlist = assignment.getSlots();
+                       for (int i = 0; i < slotlist.size(); i++) {
+                           hoogteStart = slotlist.get(0).getHoogte();
+                           if (slotlist.get(i).getHoogte() != hoogteStart) {
+                               plaatsen = false;
+                           }
+                       }
+                       if (plaatsen) {
+                           plaatsContainer(c, slotlist, checkerboard);
+                           executed_assignments.add(assignment);
+                       }
+                   }
+               }
+               for(Assignment a: executed_assignments) {
+                   wachtlijst.remove(a);
+               }
+           }
+       }
+   }
+
+   public static void plaatsContainer(Container c, ArrayList<Slot> toegewezenSlots, CheckerBoardJavaExample checkerboard) {
+       c.setStart(toegewezenSlots.get(0));
+       c.setEind(toegewezenSlots.get(toegewezenSlots.size()-1));
+       for(Slot slot: toegewezenSlots) {
+           slot.voegContainerToe(c);
+           int hoogte_container = slot.getHoogte();
+           checkerboard.veranderKleur(slot.getX(), slot.getY(),hoogte_container);
+       }
+   }
+
+   public static void verplaatsContainer(Container container, ArrayList<Slot> alleSlots, ArrayList<Slot> toegewezenSlots, CheckerBoardJavaExample checkerBoard) {
+        //container wordt van huidige locatie gehaald --> kleuren aanpassen
+       int kleur = container.getStart().getHoogte() - 1;
+       for (int i = container.getStart().getX(); i < container.getEind().getX()+1; i++) {
+           for (int j = container.getStart().getY(); j < container.getEind().getY()+1; j++) {
+               checkerBoard.veranderKleur(i, j, kleur);
+               for (Slot slot : alleSlots) {
+                   if (slot.getX() == i && slot.getY() == j) {
+                       slot.verwijderContainer();
+                   }
+               }
+           }
+       }
+       plaatsContainer(container, toegewezenSlots, checkerBoard);
    }
 }
