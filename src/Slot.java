@@ -2,7 +2,7 @@ import java.util.Stack;
 
 public class Slot {
     private int id,x,y;
-    private Stack hoogte;
+    private Stack<Container> hoogte;
 
     public Slot(int id, int x, int y) {
         this.id = id;
@@ -42,4 +42,8 @@ public class Slot {
     }
 
     public void verwijderContainer() { this.hoogte.pop(); }
+
+    public Stack<Container> getStack() {
+        return hoogte;
+    }
 }

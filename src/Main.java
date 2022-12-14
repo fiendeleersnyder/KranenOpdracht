@@ -1,9 +1,7 @@
+import java.awt.*;
 import java.io.*;
-import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.Set;
+import java.sql.Array;
+import java.util.*;
 
 import org.json.simple.*;
 import org.json.simple.parser.*;
@@ -15,21 +13,34 @@ public class Main {
         ArrayList<Slot> slots = new ArrayList<>();
         ArrayList<Container> containers = new ArrayList<>();
         Set<Assignment> assignments = new HashSet<>();
+        ArrayList<Kraan> kranen = new ArrayList<>();
+        int length = 0;
+        int width = 0;
+
+        int maxHeight = 0;
 
         int max_x = 0;
         int max_y = 0;
 
-        try (FileReader reader = new FileReader("data/terminal_4_3.json")){
+        try (FileReader reader = new FileReader("data/terminal22_1_100_1_10.json")){
             Object obj = jsonParser.parse(reader);
             JSONObject jsonObject = (JSONObject)obj;
 
             String name = (String)jsonObject.get("name");
+            length = ((Long) jsonObject.get("length")).intValue();
+            width = ((Long)jsonObject.get("width")).intValue();
+            maxHeight = ((Long)jsonObject.get("maxheight")).intValue();
+
 
             JSONArray slotList = (JSONArray) jsonObject.get("slots");
             slotList.forEach( data -> parseSlots( (JSONObject) data, slots) );
 
+            JSONArray craneList = (JSONArray) jsonObject.get("cranes");
+            craneList.forEach( data -> parseCranes( (JSONObject) data, kranen) );
+
             JSONArray containerList = (JSONArray) jsonObject.get("containers");
             containerList.forEach( data -> parseContainer( (JSONObject) data, containers ) );
+            containers.sort(Comparator.comparing(Container::getId));
 
             JSONArray assignmentList = (JSONArray) jsonObject.get("assignments");
             assignmentList.forEach( data -> parseAssignment( (JSONObject) data, assignments ,slots) );
@@ -37,26 +48,35 @@ public class Main {
         } catch (ParseException | IOException e) {
             e.printStackTrace();
         }
+        String finishName;
+        int finishMaxHeight = 0;
+        Set<Assignment> toFinishAssignments = new HashSet<>();
 
-        for (Slot slot: slots) {
-            if (slot.getX() > max_x) {
-                max_x = slot.getX();
-            }
-            if (slot.getY() > max_y) {
-                max_y = slot.getY();
-            }
+        try (FileReader reader = new FileReader("data/terminal22_1_100_1_10target.json")){
+            Object obj = jsonParser.parse(reader);
+            JSONObject jsonObject = (JSONObject)obj;
+
+            finishName = (String)jsonObject.get("name");
+            finishMaxHeight = ((Long)jsonObject.get("maxheight")).intValue();
+
+            JSONArray assignmentList = (JSONArray) jsonObject.get("assignments");
+            assignmentList.forEach( data -> parseAssignment( (JSONObject) data, toFinishAssignments ,slots, containers) );
+
+        } catch (ParseException | IOException e) {
+            e.printStackTrace();
         }
 
-        final int ROWS = max_y+1; //y
-        final int COLS = max_x+1; //x
-
-        CheckerBoardJavaExample CheckerBoard = new CheckerBoardJavaExample(ROWS,COLS);
+        CheckerBoardJavaExample CheckerBoard = new CheckerBoardJavaExample(width,length);
         final int SIZE = 600;
         CheckerBoard.setSize(SIZE, SIZE);
         JPanel legende = new JPanel();
         legende.setSize(300, 600);
         CheckerBoard.setVisible(true);
-        JSplitPane pane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, CheckerBoard, legende);
+        JPanel panel = new JPanel();
+        panel.setLayout(new FlowLayout());
+        JScrollPane scrollPane = new JScrollPane(CheckerBoard);
+        panel.add(scrollPane);
+        JSplitPane pane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, panel, legende);
         pane.setSize(600,600);
         pane.setVisible(true);
 
@@ -85,6 +105,8 @@ public class Main {
 
         setStartPositie(assignments, containers, CheckerBoard);
 
+        doAssignments(toFinishAssignments, kranen, containers, maxHeight);
+
         ArrayList<Slot> toegewezenSlots = new ArrayList<>();
 
         for (Slot slot: slots) {
@@ -93,7 +115,7 @@ public class Main {
             }
         }
 
-        verplaatsContainer(containers.get(3), slots, toegewezenSlots, CheckerBoard);
+        //verplaatsContainer(containers.get(3), slots, toegewezenSlots, CheckerBoard);
 
         /*CheckerBoard.veranderKleur(5, 3, 0);
         CheckerBoard.veranderKleur(5, 4, 1);
@@ -164,22 +186,35 @@ public class Main {
         slots.add(new Slot(id, x, y));
     }
 
+    private static void parseCranes(JSONObject data,ArrayList<Kraan> kranen){
+        int id = ((Long) data.get("id")).intValue();
+        double x = ((Number) data.get("x")).doubleValue();
+        double y = ((Number) data.get("y")).doubleValue();
+        double xmin = ((Number) data.get("xmin")).doubleValue();
+        double ymin = ((Number) data.get("ymin")).doubleValue();
+        double xmax = ((Number) data.get("xmax")).doubleValue();
+        double ymax = ((Number) data.get("ymax")).doubleValue();
+        double xspeed = ((Number) data.get("xspeed")).doubleValue();
+        double yspeed = ((Number) data.get("yspeed")).doubleValue();
+        kranen.add(new Kraan(id, x, y, xmin, ymin, xmax, ymax, xspeed, yspeed));
+    }
+
     private static void parseContainer(JSONObject data,ArrayList<Container> containers){
         int id = ((Long) data.get("id")).intValue();
         int lengte = ((Long) data.get("length")).intValue();
         containers.add(new Container(id, lengte));
     }
 
-    private static void parseAssignment(JSONObject data, Set<Assignment> assignement, ArrayList<Slot> slotLijst){
-        JSONArray slotList = (JSONArray) data.get("slot_id");
+    private static void parseAssignment(JSONObject data, Set<Assignment> assignement, ArrayList<Slot> slotLijst, ArrayList<Container> containers){
+        Long slot_id = (Long) data.get("slot_id");
         int container_id = ((Long) data.get("container_id")).intValue();
 
         Assignment assignment = new Assignment(container_id);
+        Container container = containers.get(container_id-1);
 
-        for(int j=0;j<slotList.size();j++){
-            int id = ((Long) slotList.get(j)).intValue();
+        for(int j=0;j<container.getLengte();j++){
             for(int i=0; i<slotLijst.size(); i++){
-                if(slotLijst.get(i).getId()==id){
+                if(slotLijst.get(i).getId()== slot_id + j){
                     assignment.addSlot(slotLijst.get(i));
                     break;
                 }
@@ -245,5 +280,67 @@ public class Main {
            }
        }
        plaatsContainer(container, toegewezenSlots, checkerBoard);
+   }
+
+   public static void doAssignments(Set<Assignment> toFinishAssignments, ArrayList<Kraan> kranen, ArrayList<Container> containers, int max_hoogte ) {
+        while (!toFinishAssignments.isEmpty()) {
+            ArrayList<Assignment> executed_assignments = new ArrayList<>();
+            for (Assignment assignment : toFinishAssignments) {
+                int positieContainerX = containers.get(assignment.getContainer_id() - 1).getStart().getX();
+                double positiePickupX = positieContainerX + (containers.get(assignment.getContainer_id() - 1).getLengte() / 2);
+
+                int positieContainerY = containers.get(assignment.getContainer_id() - 1).getStart().getY();
+                double positiePickupY = positieContainerY + 0.5;
+
+                if (positieContainerX == assignment.getSlots().get(0).getX() && positieContainerY == assignment.getSlots().get(0).getY()) {
+                    continue;
+                }
+
+                Kraan kraanToDoAssigment = kranen.get(0);
+
+                for (Kraan kraan : kranen) {
+                    if (positiePickupX <= kraan.getX_maximum() && positiePickupX >= kraan.getX_maximum() && positiePickupY <= kraan.getY_maximum() && positiePickupY >= kraan.getY_maximum()) {
+                        kraanToDoAssigment = kraan;
+                    }
+                }
+                boolean hoogteOke = true;
+                for (Slot slot : assignment.getSlots()) {
+                    if (slot.getHoogte() + 1 > max_hoogte) {
+                        hoogteOke = false;
+                        break;
+                    }
+                }
+
+                boolean containerEronderOke = false;
+                if(hoogteOke){
+                    Slot slotBegin = assignment.getSlots().get(0);
+                    Slot slotEind = assignment.getSlots().get(-1);
+                    if (slotBegin.getHoogte() != 0){
+                        Container containerBegin = slotBegin.getStack().get(slotBegin.getHoogte()-1);
+                        Container containerEind = slotEind.getStack().get(slotEind.getHoogte()-1);
+                        if (containerBegin.getStart() == slotBegin && containerEind.getEind() == slotEind) {
+                            containerEronderOke = true;
+                        }
+                    }
+                }
+
+                if(containerEronderOke){
+                    for(Kraan andereKraan: kranen){
+                        if (!Objects.equals(andereKraan, kraanToDoAssigment)) {
+                            if(andereKraan.getX_coordinaat() <= kraanToDoAssigment.getX_coordinaat()) {
+                                //if Xanderekraan is een element van [Xhuidigekraan, Xcontainer + lengte]
+                                //if positie andere kraan is tussen huidige kraanpositie en gewenste plaats container + lengte --> kraan empty move laten doen om te verplaatsen
+                                // else gwn verplaatsen
+                            }
+                        }
+                    }
+                }
+
+
+            }
+            for (Assignment assignment: executed_assignments) {
+                toFinishAssignments.remove(assignment);
+            }
+        }
    }
 }
