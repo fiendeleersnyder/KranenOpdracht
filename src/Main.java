@@ -43,7 +43,7 @@ public class Main {
             containers.sort(Comparator.comparing(Container::getId));
 
             JSONArray assignmentList = (JSONArray) jsonObject.get("assignments");
-            assignmentList.forEach( data -> parseAssignment( (JSONObject) data, assignments ,slots) );
+            assignmentList.forEach( data -> parseAssignment( (JSONObject) data, assignments ,slots, containers) );
 
         } catch (ParseException | IOException e) {
             e.printStackTrace();
@@ -109,11 +109,11 @@ public class Main {
 
         ArrayList<Slot> toegewezenSlots = new ArrayList<>();
 
-        for (Slot slot: slots) {
+        /*for (Slot slot: slots) {
             if (slot.getId() == 2 || slot.getId() == 3) {
                 toegewezenSlots.add(slot);
             }
-        }
+        }*/
 
         //verplaatsContainer(containers.get(3), slots, toegewezenSlots, CheckerBoard);
 
@@ -344,3 +344,21 @@ public class Main {
         }
    }
 }
+
+//lijst met trajecten
+
+
+//assignement uit lijst halen, vervolgens controleren welke kraan deze zou moeten oppikken: checken of slot waar container staat + (lengte/2) in bereik van container ligt
+// controleren of container kan verplaatst worden qua hoogte en middenshit en of andere kraan niet in de weg staat
+        //kan container niet verplaatst worden qua hoogte of middenshit --> voeg assignement toe op einde van todo lijst
+        // kan container niet verplaatst worden qua andere container in de weg --> empty move om deze weg te halen en dan verdergaan
+// startpostitie kranen setten + tijd setten
+// TRAJECT: pickups van traject setten  + starttijd van pickup
+// TRAJECT: positie aanpassen en tijden berekenen
+// GUI: kleuren aanpassen
+// TRAJECT: tijden setten en eindpositie setten
+// KRAAN: in kraan huidige locatie aanpassen.
+
+
+
+// positie container is coordinaat van container + (lengte/2)
