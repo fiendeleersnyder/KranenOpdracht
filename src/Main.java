@@ -372,18 +372,6 @@ public class Main {
                     beginX = eindX;
                 }
 
-
-
-
-                boolean kranenOke = false;
-                if(containerEronderOke){
-
-                }
-                if (kranenOke) {
-
-                }
-
-
             }
             for (Assignment assignment: executed_assignments) {
                 toFinishAssignments.remove(assignment);
