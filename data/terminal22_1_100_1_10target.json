@@ -1,0 +1,46 @@
+{
+          "name": "Terminal1",
+			 "maxheight": 3,
+			 "assignments": [
+                    {
+                            "slot_id": 16,
+                       "container_id": 1
+                    },
+                    {
+                            "slot_id": 27,
+                       "container_id": 2
+                    },
+                    {
+                            "slot_id": 53,
+                       "container_id": 3
+                    },
+                    {
+                            "slot_id": 77,
+                       "container_id": 4
+                    },
+                    {
+                            "slot_id": 43,
+                       "container_id": 5
+                    },
+                    {
+                            "slot_id": 16,
+                       "container_id": 6
+                    },
+                    {
+                            "slot_id": 21,
+                       "container_id": 7
+                    },
+                    {
+                            "slot_id": 55,
+                       "container_id": 8
+                    },
+                    {
+                            "slot_id": 55,
+                       "container_id": 9
+                    },
+                    {
+                            "slot_id": 86,
+                       "container_id": 10
+                    }
+                  ]
+}

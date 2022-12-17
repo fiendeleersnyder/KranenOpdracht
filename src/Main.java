@@ -296,13 +296,6 @@ public class Main {
                     continue;
                 }
 
-                Kraan kraanToDoAssigment = kranen.get(0);
-
-                for (Kraan kraan : kranen) {
-                    if (positiePickupX <= kraan.getX_maximum() && positiePickupX >= kraan.getX_maximum() && positiePickupY <= kraan.getY_maximum() && positiePickupY >= kraan.getY_maximum()) {
-                        kraanToDoAssigment = kraan;
-                    }
-                }
                 boolean hoogteOke = true;
                 for (Slot slot : assignment.getSlots()) {
                     if (slot.getHoogte() + 1 > max_hoogte) {
@@ -314,7 +307,7 @@ public class Main {
                 boolean containerEronderOke = false;
                 if(hoogteOke){
                     Slot slotBegin = assignment.getSlots().get(0);
-                    Slot slotEind = assignment.getSlots().get(-1);
+                    Slot slotEind = assignment.getSlots().get(assignment.getSlots().size()-1);
                     if (slotBegin.getHoogte() != 0){
                         Container containerBegin = slotBegin.getStack().get(slotBegin.getHoogte()-1);
                         Container containerEind = slotEind.getStack().get(slotEind.getHoogte()-1);
@@ -324,16 +317,70 @@ public class Main {
                     }
                 }
 
-                if(containerEronderOke){
-                    for(Kraan andereKraan: kranen){
-                        if (!Objects.equals(andereKraan, kraanToDoAssigment)) {
-                            if(andereKraan.getX_coordinaat() <= kraanToDoAssigment.getX_coordinaat()) {
-                                //if Xanderekraan is een element van [Xhuidigekraan, Xcontainer + lengte]
-                                //if positie andere kraan is tussen huidige kraanpositie en gewenste plaats container + lengte --> kraan empty move laten doen om te verplaatsen
-                                // else gwn verplaatsen
+                ArrayList<Kraan> kranenToDoAssignment = new ArrayList<>();
+                double positieEindX = assignment.getSlots().get(0).getX() + (containers.get(assignment.getContainer_id() - 1).getLengte() / 2);
+                double positieEindY = assignment.getSlots().get(0).getY() + 0.5;
+                if (containerEronderOke) {
+                    double positieBeginX = positiePickupX;
+                    double positieBeginY = positiePickupY;
+
+                    while (positieBeginX != positieEindX && positieBeginY != positieEindY) {
+                        for (Kraan kraan : kranen) {
+                            if (positieBeginX <= kraan.getX_maximum() && positieBeginX >= kraan.getX_minimum() && positieBeginY <= kraan.getY_maximum() && positieBeginY >= kraan.getY_minimum()) {
+                                kranenToDoAssignment.add(kraan);
+                                if (positieEindX <= kraan.getX_maximum() && positieEindX >= kraan.getX_minimum() && positieEindY <= kraan.getY_maximum() && positieEindY >= kraan.getY_minimum()) {
+                                    positieEindX = positieBeginX;
+                                    positieEindY = positieBeginY;
+                                    break;
+                                } else {
+                                    if (moveLeft(positieEindX, positieBeginX)) {
+                                        positieBeginX = kraan.getX_minimum();
+                                    } else {
+                                        positieBeginX = kraan.getX_maximum();
+                                    }
+                                    if (moveUp(positieEindY, positieBeginY)) {
+                                        positieBeginY = kraan.getY_minimum();
+                                    } else {
+                                        positieBeginY = kraan.getY_maximum();
+                                    }
+                                }
+
                             }
                         }
                     }
+                }
+
+                //elke kraan gaat een verplaatsing doen, eindx is de plek waar de container moet komen of een minimum of maximum van een kraan
+                //de volgende kraan zal dan vanaf dat minimum of maximum verder werken en richting de eindplek te komen
+                double beginX = positiePickupX;
+                for (int i = 0; i < kranenToDoAssignment.size(); i++) {
+                    double eindX = positieEindX;
+                    if (kranenToDoAssignment.get(i).getX_minimum() > eindX || kranenToDoAssignment.get(i).getX_maximum() < eindX) {
+                        if (moveLeft(eindX, beginX)) {
+                            eindX = kranenToDoAssignment.get(i).getX_minimum();
+                        }
+                        else {
+                            eindX = kranenToDoAssignment.get(i).getX_maximum();
+                        }
+                    }
+                    zetKranenOpzij(kranen, kranenToDoAssignment.get(i), beginX, eindX);
+                    //ik weet niet als er verder nog iets moet gecontroleerd worden, maar zo nee dan kan je denk ik hier de functie verplaatscontainer oproepen
+                    //de doAssignments functie zal wel nog wat extra parameters moeten meekrijgen dan
+                    //wel nog de sloten waar de container opmoet in een lijst steken denk ik?
+                    //als de container tussendoor nog moet ergens neergezet worden zal dit wel nog wat werk vereisen denk ik want momenteel wordt hier enkel met coördinaten gewerkt
+                    //mss de lijst met sloten overlopen en kijken welke bij het minimum of maximum horen? geen idee is het eerste waar ik aan denk
+                    beginX = eindX;
+                }
+
+
+
+
+                boolean kranenOke = false;
+                if(containerEronderOke){
+
+                }
+                if (kranenOke) {
+
                 }
 
 
@@ -343,6 +390,73 @@ public class Main {
             }
         }
    }
+
+    public static boolean moveLeft(double x_eind, double x_begin) {
+        if (x_eind < x_begin) {
+            return true;
+        }
+        return false;
+    }
+
+    public static boolean moveUp(Double y_eind, double y_begin) {
+        if (y_eind < y_begin) {
+            return true;
+        }
+        return false;
+    }
+
+
+    //hierin heb ik al gecontroleerd als een andere kraan op het pad staat dat de kraan zou moeten afleggen, zo ja wordt deze andere kraan verplaats zodat die niet meer in de weg staat
+    public static void zetKranenOpzij(ArrayList<Kraan> kranen, Kraan kraan, double beginX, double eindX) {
+        for(Kraan andereKraan: kranen){
+            if (!Objects.equals(andereKraan, kraan)) {
+                if (moveLeft(eindX, beginX)) {
+                    if (andereKraan.getX_coordinaat() >= beginX && andereKraan.getX_coordinaat() <= eindX) {
+                        if ((andereKraan.getX_maximum() - andereKraan.getX_minimum() / 2) + 1 < beginX || ((andereKraan.getX_maximum() - andereKraan.getX_minimum() / 2)) - 1 > eindX) {
+                            andereKraan.setX_coordinaat((andereKraan.getX_maximum() - andereKraan.getX_minimum() / 2));
+                        }
+                        else if (beginX-1 >= andereKraan.getX_minimum() && beginX-1 <= andereKraan.getX_maximum()){
+                            andereKraan.setX_coordinaat(beginX-1);
+                        }
+                        else if (eindX + 1 >= andereKraan.getX_minimum() && eindX + 1 <= andereKraan.getX_maximum()) {
+                            andereKraan.setX_coordinaat(eindX + 1);
+                        }
+                        else if (andereKraan.getX_minimum() < beginX-1) {
+                            andereKraan.setX_coordinaat(andereKraan.getX_minimum());
+                        }
+                        else if (andereKraan.getX_maximum() > eindX + 1) {
+                            andereKraan.setX_coordinaat(andereKraan.getX_maximum());
+                        }
+                    }
+                }
+                else {
+                    if (andereKraan.getX_coordinaat() <= beginX && andereKraan.getX_coordinaat() >= eindX) {
+                        if ((andereKraan.getX_maximum() - andereKraan.getX_minimum() / 2) + 1 > beginX || ((andereKraan.getX_maximum() - andereKraan.getX_minimum() / 2)) - 1 < eindX) {
+                            andereKraan.setX_coordinaat((andereKraan.getX_maximum() - andereKraan.getX_minimum() / 2));
+                        }
+                        else if (beginX-1 <= andereKraan.getX_minimum() && beginX-1 >= andereKraan.getX_maximum()){
+                            andereKraan.setX_coordinaat(beginX-1);
+                        }
+                        else if (eindX + 1 <= andereKraan.getX_minimum() && eindX + 1 >= andereKraan.getX_maximum()) {
+                            andereKraan.setX_coordinaat(eindX + 1);
+                        }
+                        else if (andereKraan.getX_minimum() > beginX-1) {
+                            andereKraan.setX_coordinaat(andereKraan.getX_minimum());
+                        }
+                        else if (andereKraan.getX_maximum() < eindX + 1) {
+                            andereKraan.setX_coordinaat(andereKraan.getX_maximum());
+                        }
+                    }
+
+                    //if Xanderekraan is een element van [Xhuidigekraan, Xcontainer + lengte]
+                    //if positie andere kraan is tussen huidige kraanpositie en gewenste plaats container + lengte --> kraan empty move laten doen om te verplaatsen
+                    // else gwn verplaatsen
+                }
+            }
+            //op dit moment zou er geen enkele kraan tussen het start en eindpunt mogen staan (bij 2 kranen toch)
+        }
+
+    }
 }
 
 //lijst met trajecten
