@@ -59,7 +59,7 @@ public class Main {
         int finishMaxHeight = 0;
         Set<Assignment> toFinishAssignments = new HashSet<>();
         if (targetHeight == 0) {
-            try (FileReader reader = new FileReader("data/5t/targetTerminalB_20_10_3_2_160.json")) {
+            try (FileReader reader = new FileReader("data/5t/targetTerminalB_20_10_3_2_160UPDATE.json")) {
                 Object obj = jsonParser.parse(reader);
                 JSONObject jsonObject = (JSONObject) obj;
 
