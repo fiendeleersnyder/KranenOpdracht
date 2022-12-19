@@ -25,7 +25,7 @@ public class Main {
 
         int tijd = 0;
 
-        try (FileReader reader = new FileReader("data/1t/TerminalA_20_10_3_2_100.json")){
+        try (FileReader reader = new FileReader("data/5t/TerminalB_20_10_3_2_160.json")){
             Object obj = jsonParser.parse(reader);
             JSONObject jsonObject = (JSONObject)obj;
 
@@ -445,7 +445,7 @@ public class Main {
         return false;
     }
 
-    public static int zetKranenOpzij(ArrayList<Kraan> kranen, Kraan kraan, double beginX, double eindX, int tijd, ArrayList<Traject> trajecten) {
+    public static double zetKranenOpzij(ArrayList<Kraan> kranen, Kraan kraan, double beginX, double eindX, double tijd, ArrayList<Traject> trajecten) {
         for(Kraan andereKraan: kranen){
             if (!Objects.equals(andereKraan, kraan)) {
                 if (moveLeft(eindX, beginX)) {
@@ -455,30 +455,35 @@ public class Main {
                             trajecten.add(new Traject(andereKraan.getX_coordinaat(), andereKraan.getY_coordinaat(), tijd, 0, 0, andereKraan.getX_coordinaat(), (andereKraan.getY_maximum() - andereKraan.getY_minimum() / 2), tijd, eindTijd, andereKraan, -1));
                             andereKraan.setX_coordinaat((andereKraan.getX_maximum() - andereKraan.getX_minimum() / 2));
                             tijd = eindTijd;
+                            System.out.println("empty move");
                         }
                         else if (beginX-1 >= andereKraan.getX_minimum() && beginX-1 <= andereKraan.getX_maximum()){
                             int eindTijd = (int) (tijd + Math.abs(andereKraan.getX_coordinaat() - (beginX-1)) * andereKraan.getX_snelheid());
                             trajecten.add(new Traject(andereKraan.getX_coordinaat(), andereKraan.getY_coordinaat(), tijd, 0, 0,beginX-1, andereKraan.getY_coordinaat(), tijd, eindTijd, andereKraan, -1));
                             andereKraan.setX_coordinaat(beginX-1);
                             tijd = eindTijd;
+                            System.out.println("empty move");
                         }
                         else if (eindX + 1 >= andereKraan.getX_minimum() && eindX + 1 <= andereKraan.getX_maximum()) {
                             int eindTijd = (int) (tijd + Math.abs(andereKraan.getX_coordinaat() - (eindX+1)) * andereKraan.getX_snelheid());
                             trajecten.add(new Traject(andereKraan.getX_coordinaat(), andereKraan.getY_coordinaat(), tijd, 0, 0,eindX + 1, andereKraan.getY_coordinaat(), tijd, eindTijd, andereKraan, -1));
                             andereKraan.setX_coordinaat(eindX + 1);
                             tijd = eindTijd;
+                            System.out.println("empty move");
                         }
                         else if (andereKraan.getX_minimum() < beginX-1) {
                             int eindTijd = (int) (tijd + Math.abs(andereKraan.getX_coordinaat() - andereKraan.getX_minimum()) * andereKraan.getX_snelheid());
                             trajecten.add(new Traject(andereKraan.getX_coordinaat(), andereKraan.getY_coordinaat(), tijd, 0, 0, andereKraan.getX_minimum(), andereKraan.getY_coordinaat(), tijd, eindTijd, andereKraan, -1));
                             andereKraan.setX_coordinaat(andereKraan.getX_minimum());
                             tijd = eindTijd;
+                            System.out.println("empty move");
                         }
                         else if (andereKraan.getX_maximum() > eindX + 1) {
                             int eindTijd = (int) (tijd + Math.abs(andereKraan.getX_coordinaat() - andereKraan.getX_maximum()) * andereKraan.getX_snelheid());
                             trajecten.add(new Traject(andereKraan.getX_coordinaat(), andereKraan.getY_coordinaat(), tijd, 0, 0, andereKraan.getX_maximum(), andereKraan.getY_coordinaat(), tijd, eindTijd, andereKraan, -1));
                             andereKraan.setX_coordinaat(andereKraan.getX_maximum());
                             tijd = eindTijd;
+                            System.out.println("empty move");
                         }
                     }
                 }
@@ -489,30 +494,35 @@ public class Main {
                             trajecten.add(new Traject(andereKraan.getX_coordinaat(), andereKraan.getY_coordinaat(), tijd, 0, 0, (andereKraan.getX_maximum() - andereKraan.getX_minimum() / 2), andereKraan.getY_coordinaat() , tijd, eindTijd, andereKraan, -1));
                             andereKraan.setX_coordinaat((andereKraan.getX_maximum() - andereKraan.getX_minimum() / 2));
                             tijd = eindTijd;
+                            System.out.println("empty move");
                         }
                         else if (beginX-1 <= andereKraan.getX_minimum() && beginX-1 >= andereKraan.getX_maximum()){
                             int eindTijd = (int) (tijd + Math.abs(andereKraan.getX_coordinaat() - (beginX-1)) * andereKraan.getX_snelheid());
                             trajecten.add(new Traject(andereKraan.getX_coordinaat(), andereKraan.getY_coordinaat(), tijd, 0, 0, beginX-1, andereKraan.getY_coordinaat(),  tijd, eindTijd, andereKraan, -1));
                             andereKraan.setX_coordinaat(beginX-1);
                             tijd = eindTijd;
+                            System.out.println("empty move");
                         }
                         else if (eindX + 1 <= andereKraan.getX_minimum() && eindX + 1 >= andereKraan.getX_maximum()) {
                             int eindTijd = (int) (tijd + Math.abs(andereKraan.getX_coordinaat() - (eindX+1)) * andereKraan.getX_snelheid());
                             trajecten.add(new Traject(andereKraan.getX_coordinaat(), andereKraan.getY_coordinaat(), tijd, 0, 0,eindX + 1,andereKraan.getY_coordinaat(), tijd, eindTijd, andereKraan, -1));
                             andereKraan.setX_coordinaat(eindX + 1);
                             tijd = eindTijd;
+                            System.out.println("empty move");
                         }
                         else if (andereKraan.getX_minimum() > beginX-1) {
                             int eindTijd = (int) (tijd + Math.abs(andereKraan.getX_coordinaat() - andereKraan.getX_minimum()) * andereKraan.getX_snelheid());
                             trajecten.add(new Traject(andereKraan.getX_coordinaat(), andereKraan.getY_coordinaat(), tijd, 0, 0, andereKraan.getX_minimum(), andereKraan.getY_coordinaat(), tijd, eindTijd, andereKraan, -1));
                             andereKraan.setX_coordinaat(andereKraan.getX_minimum());
                             tijd = eindTijd;
+                            System.out.println("empty move");
                         }
                         else if (andereKraan.getX_maximum() < eindX + 1) {
                             int eindTijd = (int) (tijd + Math.abs(andereKraan.getX_coordinaat() - andereKraan.getX_maximum()) * andereKraan.getX_snelheid());
                             trajecten.add(new Traject(andereKraan.getX_coordinaat(), andereKraan.getY_coordinaat(), tijd, 0, 0, andereKraan.getX_maximum(), andereKraan.getY_coordinaat(), tijd, eindTijd, andereKraan, -1));
                             andereKraan.setX_coordinaat(andereKraan.getX_maximum());
                             tijd = eindTijd;
+                            System.out.println("empty move");
                         }
                     }
 
