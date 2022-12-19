@@ -2,9 +2,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
-import java.sql.Array;
 import java.util.*;
-
 import org.json.simple.*;
 import org.json.simple.parser.*;
 import javax.swing.*;
@@ -25,8 +23,7 @@ public class Main {
         int maxHeight = 0;
         int targetHeight = 0;
 
-        int max_x = 0;
-        int max_y = 0;
+        int tijd = 0;
 
         try (FileReader reader = new FileReader("data/1t/TerminalA_20_10_3_2_100.json")){
             Object obj = jsonParser.parse(reader);
@@ -93,17 +90,17 @@ public class Main {
 
 
         JTextArea textArea = new JTextArea("""
-                Wit: 0 containers
-                Paars: 1 container
-                Donkerblauw: 2 containers
-                Lichtblauw: 3 containers
-                Groen: 4 containers
-                Geel: 5 containers
-                Oranje: 6 containers
-                Rood:  7 containers
-                Roos: 8 containers
-                Grijs: 9 containers
-                Zwart: 10 containers""");
+                White: 0 containers
+               Purple: 1 container
+               Darkblue: 2 containers
+               Lightblue: 3 containers
+               Green: 4 containers
+               Yellow: 5 containers
+               Orange: 6 containers
+               Red:  7 containers
+               Pink: 8 containers
+               Grey: 9 containers
+               Black: 10 containers""");
 
         textArea.setEditable(false);
 
@@ -147,6 +144,35 @@ public class Main {
         frame.setTitle("Kranenopdracht");
         frame.setVisible(true);
 
+    }
+
+    private static void schrijfOutput(ArrayList<Traject> trajecten, String name) {
+        try{
+            FileWriter fileWriter = new FileWriter(name + "output.txt");
+            fileWriter.write("CraneId;ContainerId;PickupTime;EndTime;PickupPosX;PickupPosY;EndPosX;EndPosY;" +"\n");
+            for(Traject traject: trajecten) {
+                if (traject.getContainer_id() == -1) {
+                    fileWriter.write(traject.getKraan().getId() + ";"
+                            + " " + ";" + traject.getStarttijd() + ";" +
+                            traject.getEindtijd() + ";" + traject.getPickup_x() + ";" +
+                            traject.getPickup_y() + ";" + traject.getDropoff_x() +
+                            traject.getDropoff_y() + "\n");
+                }
+                else {
+                    fileWriter.write(traject.getKraan().getId() + ";"
+                            + traject.getContainer_id() + ";" + traject.getStarttijd() + ";" +
+                            traject.getEindtijd() + ";" + traject.getPickup_x() + ";" +
+                            traject.getPickup_y() + ";" + traject.getDropoff_x() +
+                            traject.getDropoff_y() + "\n");
+                }
+
+            }
+            fileWriter.close();
+        }
+        catch  (IOException ex) {
+            System.out.println("Error occurred while trying to write the outputfile. Try again.");
+            ex.printStackTrace();
+        }
     }
 
     private static void parseSlots(JSONObject data,ArrayList<Slot> slots){
@@ -287,6 +313,8 @@ public class Main {
                         if (containerBegin.getStart() == slotBegin && containerEind.getEind() == slotEind) {
                             containerEronderOke = true;
                         }
+                    } else {
+                        containerEronderOke = true; //voor wanneer er geen container onderstaat
                     }
                 }
 
@@ -328,8 +356,6 @@ public class Main {
                     }
                 }
 
-                //elke kraan gaat een verplaatsing doen, eindx is de plek waar de container moet komen of een minimum of maximum van een kraan
-                //de volgende kraan zal dan vanaf dat minimum of maximum verder werken en richting de eindplek te komen
                 double beginX = positiePickupX;
                 double beginY = positiePickupY;
                 ArrayList<Slot> toegewezenSlots;
@@ -383,6 +409,22 @@ public class Main {
         System.out.println("klaar");
    }
 
+    private static int berekenVerplaatsing(Kraan kraan, double pickX, double pickY, double eindX, double eindY, int tijd) {
+        int pickupTijd;
+        int x_snelheid = (int)(Math.abs(eindX-pickX) * kraan.getX_snelheid());
+        int y_snelheid =  (int)(Math.abs(eindY-pickY) * kraan.getY_snelheid());
+        pickupTijd = tijd + Math.max(x_snelheid, y_snelheid);
+        return pickupTijd;
+    }
+
+    private static int berekenPickup(Kraan kraan, double positiePickupX, double positiePickupY, int tijd) {
+        int pickupTijd;
+        int x_snelheid = (int)(Math.abs(kraan.getX_coordinaat()-positiePickupX) * kraan.getX_snelheid());
+        int y_snelheid =  (int)(Math.abs(kraan.getY_coordinaat()-positiePickupY) * kraan.getY_snelheid());
+        pickupTijd = tijd + Math.max(x_snelheid, y_snelheid);
+        return pickupTijd;
+    }
+
     public static boolean moveLeft(double y_eind, double y_begin) {
         if (y_eind < y_begin) {
             return true;
@@ -397,8 +439,8 @@ public class Main {
         return false;
     }
 
-    public static boolean moveUp(Double y_eind, double y_begin) {
-        if (y_eind < y_begin) {
+    public static boolean moveUp(Double x_eind, double x_begin) {
+        if (x_eind < x_begin) {
             return true;
         }
         return false;
@@ -489,20 +531,3 @@ public class Main {
     }
 }
 
-//lijst met trajecten
-
-
-//assignement uit lijst halen, vervolgens controleren welke kraan deze zou moeten oppikken: checken of slot waar container staat + (lengte/2) in bereik van container ligt
-// controleren of container kan verplaatst worden qua hoogte en middenshit en of andere kraan niet in de weg staat
-        //kan container niet verplaatst worden qua hoogte of middenshit --> voeg assignement toe op einde van todo lijst
-        // kan container niet verplaatst worden qua andere container in de weg --> empty move om deze weg te halen en dan verdergaan
-// startpostitie kranen setten + tijd setten
-// TRAJECT: pickups van traject setten  + starttijd van pickup
-// TRAJECT: positie aanpassen en tijden berekenen
-// GUI: kleuren aanpassen
-// TRAJECT: tijden setten en eindpositie setten
-// KRAAN: in kraan huidige locatie aanpassen.
-
-
-
-// positie container is coordinaat van container + (lengte/2)

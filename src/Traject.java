@@ -1,6 +1,6 @@
 public class Traject {
-    private int start_crane_x;
-    private int start_crane_y;
+    private double start_crane_x;
+    private double start_crane_y;
     private int startTime_crane;
     private double pickup_x;
     private double pickup_y;
@@ -11,7 +11,7 @@ public class Traject {
     private Kraan kraan;
     private int container_id;
 
-    public Traject(int kraanX, int kraanY, int startKraan, int start_x, int start_y, int eind_x, int eind_y, int starttijd, int eindtijd, Kraan kraan, int id) {
+    public Traject(double kraanX, double kraanY, int startKraan, double start_x, double start_y, double eind_x, double eind_y, int starttijd, int eindtijd, Kraan kraan, int id) {
         this.start_crane_x = kraanX;
         this.start_crane_y = kraanY;
         this.startTime_crane = startKraan;

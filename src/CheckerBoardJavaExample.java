@@ -52,24 +52,9 @@ public class CheckerBoardJavaExample extends JPanel {
         this.kleuren.add(zwart);
     }
 
-    // functie wordt opgeroepen voor de plaats waar container weggaat en voor plaats waar container komt te staan
-    //kleur is int die hoogte weegeeft na aanpassing
     public void veranderKleur(int vakjeX, int vakjeY, int kleur){
         int vak = vakjeX * COLS+ vakjeY;
         this.pnl1[vak].setBackground(kleuren.get(kleur));
 
     }
-
-    /*public String getLegende(int maxHoogte) {
-        this.pnlLegende= new JPanel(new GridLayout(1, maxHoogte, 2, 2));
-        this.pnl2 = new JPanel[maxHoogte];
-        String legende = "";
-        for(int i=0; i<maxHoogte;i++){
-            this.pnl2[i] = new JPanel();
-            pnlLegende.add(pnl2[i]);
-            this.pnl2[i].setBackground(kleuren.get(i));
-            legende += pnl2.toString() + " "+  i + " containers";
-        }
-        return legende;
-    }*/
 }
