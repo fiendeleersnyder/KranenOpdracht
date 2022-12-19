@@ -25,75 +25,43 @@ public class Kraan {
         this.trajectory = new ArrayList<>();
     }
 
-    public double getX_coordinaat() {
-        return x_coordinaat;
-    }
+    public int getId() { return id; }
 
-    public void setX_coordinaat(double x_coordinaat) {
-        this.x_coordinaat = x_coordinaat;
-    }
+    public void setId(int id) { this.id = id; }
 
-    public double getY_coordinaat() {
-        return y_coordinaat;
-    }
+    public double getX_coordinaat() { return x_coordinaat; }
 
-    public void setY_coordinaat(double y_coordinaat) {
-        this.y_coordinaat = y_coordinaat;
-    }
+    public void setX_coordinaat(double x_coordinaat) { this.x_coordinaat = x_coordinaat; }
 
-    public double getX_minimum() {
-        return x_minimum;
-    }
+    public double getY_coordinaat() { return y_coordinaat; }
 
-    public void setX_minimum(double x_minimum) {
-        this.x_minimum = x_minimum;
-    }
+    public void setY_coordinaat(double y_coordinaat) { this.y_coordinaat = y_coordinaat; }
 
-    public double getY_minimum() {
-        return y_minimum;
-    }
+    public double getX_minimum() { return x_minimum; }
 
-    public void setY_minimum(double y_minimum) {
-        this.y_minimum = y_minimum;
-    }
+    public void setX_minimum(double x_minimum) { this.x_minimum = x_minimum; }
 
-    public double getX_maximum() {
-        return x_maximum;
-    }
+    public double getY_minimum() { return y_minimum; }
 
-    public void setX_maximum(double x_maximum) {
-        this.x_maximum = x_maximum;
-    }
+    public void setY_minimum(double y_minimum) { this.y_minimum = y_minimum; }
 
-    public double getY_maximum() {
-        return y_maximum;
-    }
+    public double getX_maximum() { return x_maximum; }
 
-    public void setY_maximum(double y_maximum) {
-        this.y_maximum = y_maximum;
-    }
+    public void setX_maximum(double x_maximum) { this.x_maximum = x_maximum; }
 
-    public double getX_snelheid() {
-        return x_snelheid;
-    }
+    public double getY_maximum() { return y_maximum; }
 
-    public void setX_snelheid(double x_snelheid) {
-        this.x_snelheid = x_snelheid;
-    }
+    public void setY_maximum(double y_maximum) { this.y_maximum = y_maximum; }
 
-    public double getY_snelheid() {
-        return y_snelheid;
-    }
+    public double getX_snelheid() { return x_snelheid; }
 
-    public void setY_snelheid(double y_snelheid) {
-        this.y_snelheid = y_snelheid;
-    }
+    public void setX_snelheid(double x_snelheid) { this.x_snelheid = x_snelheid; }
 
-    public ArrayList<Traject> getTrajectory() {
-        return trajectory;
-    }
+    public double getY_snelheid() { return y_snelheid; }
 
-    public void setTrajectory(ArrayList<Traject> trajectory) {
-        this.trajectory = trajectory;
-    }
+    public void setY_snelheid(double y_snelheid) { this.y_snelheid = y_snelheid; }
+
+    public ArrayList<Traject> getTrajectory() { return trajectory; }
+
+    public void setTrajectory(ArrayList<Traject> trajectory) { this.trajectory = trajectory; }
 }
