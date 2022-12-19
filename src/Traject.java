@@ -2,10 +2,10 @@ public class Traject {
     private int start_crane_x;
     private int start_crane_y;
     private int startTime_crane;
-    private int pickup_x;
-    private int pickup_y;
-    private int dropoff_x;
-    private int dropoff_y;
+    private double pickup_x;
+    private double pickup_y;
+    private double dropoff_x;
+    private double dropoff_y;
     private int starttijd;
     private int eindtijd;
     private Kraan kraan;
@@ -25,37 +25,19 @@ public class Traject {
         this.container_id = id;
     }
 
-    public int getPickup_x() { return pickup_x; }
-
-    public void setPickup_x(int pickup_x) { this.pickup_x = pickup_x; }
-
-    public int getPickup_y() { return pickup_y; }
-
-    public void setPickup_y(int pickup_y) { this.pickup_y = pickup_y; }
-
-    public int getDropoff_x() { return dropoff_x; }
-
-    public void setDropoff_x(int dropoff_x) { this.dropoff_x = dropoff_x; }
-
-    public int getDropoff_y() { return dropoff_y; }
-
-    public void setDropoff_y(int dropoff_y) { this.dropoff_y = dropoff_y; }
-
-    public Kraan getKraan() { return kraan; }
-
-    public int getStart_crane_x() {
+    public double getStart_crane_x() {
         return start_crane_x;
     }
 
-    public void setStart_crane_x(int start_crane_x) {
+    public void setStart_crane_x(double start_crane_x) {
         this.start_crane_x = start_crane_x;
     }
 
-    public int getStart_crane_y() {
+    public double getStart_crane_y() {
         return start_crane_y;
     }
 
-    public void setStart_crane_y(int start_crane_y) {
+    public void setStart_crane_y(double start_crane_y) {
         this.start_crane_y = start_crane_y;
     }
 
@@ -67,17 +49,67 @@ public class Traject {
         this.startTime_crane = startTime_crane;
     }
 
-    public void setKraan(Kraan kraan) { this.kraan = kraan; }
+    public double getPickup_x() {
+        return pickup_x;
+    }
 
-    public int getContainer_id() { return container_id; }
+    public void setPickup_x(double pickup_x) {
+        this.pickup_x = pickup_x;
+    }
 
-    public void setContainer_id(int container_id) { this.container_id = container_id; }
+    public double getPickup_y() {
+        return pickup_y;
+    }
 
-    public int getStarttijd() { return starttijd; }
+    public void setPickup_y(double pickup_y) {
+        this.pickup_y = pickup_y;
+    }
 
-    public void setStarttijd(int starttijd) { this.starttijd = starttijd; }
+    public double getDropoff_x() {
+        return dropoff_x;
+    }
 
-    public int getEindtijd() { return eindtijd; }
+    public void setDropoff_x(double dropoff_x) {
+        this.dropoff_x = dropoff_x;
+    }
 
-    public void setEindtijd(int eindtijd) { this.eindtijd = eindtijd;}
+    public double getDropoff_y() {
+        return dropoff_y;
+    }
+
+    public void setDropoff_y(double dropoff_y) {
+        this.dropoff_y = dropoff_y;
+    }
+
+    public int getStarttijd() {
+        return starttijd;
+    }
+
+    public void setStarttijd(int starttijd) {
+        this.starttijd = starttijd;
+    }
+
+    public int getEindtijd() {
+        return eindtijd;
+    }
+
+    public void setEindtijd(int eindtijd) {
+        this.eindtijd = eindtijd;
+    }
+
+    public Kraan getKraan() {
+        return kraan;
+    }
+
+    public void setKraan(Kraan kraan) {
+        this.kraan = kraan;
+    }
+
+    public int getContainer_id() {
+        return container_id;
+    }
+
+    public void setContainer_id(int container_id) {
+        this.container_id = container_id;
+    }
 }

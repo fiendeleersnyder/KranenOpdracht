@@ -25,6 +25,14 @@ public class Kraan {
         this.trajectory = new ArrayList<>();
     }
 
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
     public double getX_coordinaat() {
         return x_coordinaat;
     }
