@@ -53,7 +53,7 @@ public class CheckerBoard extends JPanel {
     }
 
     public void veranderKleur(int vakjeX, int vakjeY, int kleur){
-        int vak = vakjeX * ROWS + vakjeY;
+        int vak = vakjeX + vakjeY * COLS;
         this.pnl1[vak].setBackground(kleuren.get(kleur));
 
     }

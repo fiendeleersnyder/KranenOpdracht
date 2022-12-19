@@ -57,19 +57,20 @@ public class Main {
         String finishName;
         int finishMaxHeight = 0;
         Set<Assignment> toFinishAssignments = new HashSet<>();
+        if (targetHeight == 0) {
+            try (FileReader reader = new FileReader("data/5t/targetTerminalB_20_10_3_2_160.json")) {
+                Object obj = jsonParser.parse(reader);
+                JSONObject jsonObject = (JSONObject) obj;
 
-        try (FileReader reader = new FileReader("data/1t/targetTerminalA_20_10_3_2_100.json")){
-            Object obj = jsonParser.parse(reader);
-            JSONObject jsonObject = (JSONObject)obj;
+                finishName = (String) jsonObject.get("name");
+                finishMaxHeight = ((Long) jsonObject.get("maxheight")).intValue();
 
-            finishName = (String)jsonObject.get("name");
-            finishMaxHeight = ((Long)jsonObject.get("maxheight")).intValue();
+                JSONArray assignmentList = (JSONArray) jsonObject.get("assignments");
+                assignmentList.forEach(data -> parseAssignment((JSONObject) data, toFinishAssignments, slots, containers));
 
-            JSONArray assignmentList = (JSONArray) jsonObject.get("assignments");
-            assignmentList.forEach(data -> parseAssignment( (JSONObject) data, toFinishAssignments ,slots, containers) );
-
-        } catch (ParseException | IOException e) {
-            e.printStackTrace();
+            } catch (ParseException | IOException e) {
+                e.printStackTrace();
+            }
         }
 
         CheckerBoard CheckerBoard = new CheckerBoard(length,width);
@@ -208,7 +209,7 @@ public class Main {
 
         for(int j=0;j<container.getLengte();j++){
             for(int i=0; i<slotLijst.size(); i++){
-                if(slotLijst.get(i).getId()== slot_id + j){
+                if(slotLijst.get(i).getId() == slot_id + j){
                     assignment.addSlot(slotLijst.get(i));
                     break;
                 }
@@ -283,7 +284,7 @@ public class Main {
                 int positieContainerX = containers.get(assignment.getContainer_id()).getStart().getX();
                 double positiePickupX = positieContainerX + (containers.get(assignment.getContainer_id()).getLengte() / 2);
 
-                int positieContainerY = containers.get(assignment.getContainer_id()).getStart().getY();
+                int positieContainerY = container.getStart().getY();
                 double positiePickupY = positieContainerY + 0.5;
 
                 if (positieContainerX == assignment.getSlots().get(0).getX() && positieContainerY == assignment.getSlots().get(0).getY()) {
@@ -315,7 +316,7 @@ public class Main {
                 }
 
                 ArrayList<Kraan> kranenToDoAssignment = new ArrayList<>();
-                double positieEindX = assignment.getSlots().get(0).getX() + (containers.get(assignment.getContainer_id()).getLengte() / 2);
+                double positieEindX = assignment.getSlots().get(0).getX() + (container.getLengte() / 2.0);
                 double positieEindY = assignment.getSlots().get(0).getY() + 0.5;
                 double eindeX = positieEindX;
                 double eindeY = positieEindY;
@@ -328,8 +329,8 @@ public class Main {
                             if (positieBeginX <= kraan.getX_maximum() && positieBeginX >= kraan.getX_minimum() && positieBeginY <= kraan.getY_maximum() && positieBeginY >= kraan.getY_minimum()) {
                                 kranenToDoAssignment.add(kraan);
                                 if (positieEindX <= kraan.getX_maximum() && positieEindX >= kraan.getX_minimum() && positieEindY <= kraan.getY_maximum() && positieEindY >= kraan.getY_minimum()) {
-                                    positieEindX = positieBeginX;
-                                    positieEindY = positieBeginY;
+                                    eindeX = positieBeginX;
+                                    eindeY = positieBeginY;
                                     break;
                                 } else {
                                     if (moveLeft(eindeX, positieBeginX)) {
@@ -348,7 +349,6 @@ public class Main {
                         }
                     }
                 }
-
                 double beginX = positiePickupX;
                 double beginY = positiePickupY;
                 ArrayList<Slot> toegewezenSlots;
