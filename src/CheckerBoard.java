@@ -2,7 +2,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
 
-public class CheckerBoardJavaExample extends JPanel {
+public class CheckerBoard extends JPanel {
     private int ROWS;
     private int COLS;
     private int NUM;
@@ -23,7 +23,7 @@ public class CheckerBoardJavaExample extends JPanel {
     private Color zwart = Color.BLACK; // 10 containers
     private ArrayList<Color> kleuren = new ArrayList<>();
 
-    public CheckerBoardJavaExample(int rows, int cols) {
+    public CheckerBoard(int rows, int cols) {
         maakLijst();
         this.ROWS= rows;
         this.COLS= cols;
@@ -53,7 +53,7 @@ public class CheckerBoardJavaExample extends JPanel {
     }
 
     public void veranderKleur(int vakjeX, int vakjeY, int kleur){
-        int vak = vakjeX * COLS+ vakjeY;
+        int vak = vakjeX + vakjeY * COLS;
         this.pnl1[vak].setBackground(kleuren.get(kleur));
 
     }

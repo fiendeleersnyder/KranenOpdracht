@@ -2,6 +2,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
+import java.text.CollationElementIterator;
 import java.util.*;
 import org.json.simple.*;
 import org.json.simple.parser.*;
@@ -23,9 +24,9 @@ public class Main {
         int maxHeight = 0;
         int targetHeight = 0;
 
-        int tijd = 0;
+        double tijd = 0;
 
-        try (FileReader reader = new FileReader("data/1t/TerminalA_20_10_3_2_100.json")){
+        try (FileReader reader = new FileReader("data/5t/TerminalB_20_10_3_2_160.json")){
             Object obj = jsonParser.parse(reader);
             JSONObject jsonObject = (JSONObject)obj;
 
@@ -49,8 +50,7 @@ public class Main {
             containers.sort(Comparator.comparing(Container::getId));
 
             JSONArray assignmentList = (JSONArray) jsonObject.get("assignments");
-            int finalLength = length;
-            assignmentList.forEach(data -> parseAssignment( (JSONObject) data, assignments ,slots, containers, finalLength) );
+            assignmentList.forEach(data -> parseAssignment( (JSONObject) data, assignments ,slots, containers) );
 
         } catch (ParseException | IOException e) {
             e.printStackTrace();
@@ -58,23 +58,23 @@ public class Main {
         String finishName;
         int finishMaxHeight = 0;
         Set<Assignment> toFinishAssignments = new HashSet<>();
+        if (targetHeight == 0) {
+            try (FileReader reader = new FileReader("data/5t/targetTerminalB_20_10_3_2_160UPDATE.json")) {
+                Object obj = jsonParser.parse(reader);
+                JSONObject jsonObject = (JSONObject) obj;
 
-        try (FileReader reader = new FileReader("data/1t/targetTerminalA_20_10_3_2_100.json")){
-            Object obj = jsonParser.parse(reader);
-            JSONObject jsonObject = (JSONObject)obj;
+                finishName = (String) jsonObject.get("name");
+                finishMaxHeight = ((Long) jsonObject.get("maxheight")).intValue();
 
-            finishName = (String)jsonObject.get("name");
-            finishMaxHeight = ((Long)jsonObject.get("maxheight")).intValue();
+                JSONArray assignmentList = (JSONArray) jsonObject.get("assignments");
+                assignmentList.forEach(data -> parseAssignment((JSONObject) data, toFinishAssignments, slots, containers));
 
-            JSONArray assignmentList = (JSONArray) jsonObject.get("assignments");
-            int finalLength1 = length;
-            assignmentList.forEach(data -> parseAssignment( (JSONObject) data, toFinishAssignments ,slots, containers, finalLength1) );
-
-        } catch (ParseException | IOException e) {
-            e.printStackTrace();
+            } catch (ParseException | IOException e) {
+                e.printStackTrace();
+            }
         }
 
-        CheckerBoardJavaExample CheckerBoard = new CheckerBoardJavaExample(length,width);
+        CheckerBoard CheckerBoard = new CheckerBoard(width,length);
         final int SIZE = 600;
         CheckerBoard.setSize(SIZE, SIZE);
         JPanel legende = new JPanel();
@@ -120,7 +120,7 @@ public class Main {
             @Override
             public void actionPerformed(ActionEvent e) {
                 //if(finalTargetHeight!=0) {
-                    doAssignments(toFinishAssignments, kranen, containers, finalMaxHeight, slots, CheckerBoard, tijd, trajecten);
+                doAssignments(toFinishAssignments, kranen, containers, finalMaxHeight, slots, CheckerBoard, tijd, trajecten);
                 //} //else minimizeHeight();
             }
         });
@@ -149,20 +149,20 @@ public class Main {
     private static void schrijfOutput(ArrayList<Traject> trajecten, String name) {
         try{
             FileWriter fileWriter = new FileWriter(name + "output.txt");
-            fileWriter.write("CraneId;ContainerId;PickupTime;EndTime;PickupPosX;PickupPosY;EndPosX;EndPosY;" +"\n");
+            fileWriter.write("CraneId;ContainerId;PickupTime;EndTime;CranePickupPosX;CranePickupPosY;CraneEndPosX;CraneEndPosY;" +"\n");
             for(Traject traject: trajecten) {
                 if (traject.getContainer_id() == -1) {
                     fileWriter.write(traject.getKraan().getId() + ";"
                             + " " + ";" + traject.getStarttijd() + ";" +
                             traject.getEindtijd() + ";" + traject.getPickup_x() + ";" +
-                            traject.getPickup_y() + ";" + traject.getDropoff_x() +
+                            traject.getPickup_y() + ";" + traject.getDropoff_x() + ";" +
                             traject.getDropoff_y() + "\n");
                 }
                 else {
                     fileWriter.write(traject.getKraan().getId() + ";"
                             + traject.getContainer_id() + ";" + traject.getStarttijd() + ";" +
                             traject.getEindtijd() + ";" + traject.getPickup_x() + ";" +
-                            traject.getPickup_y() + ";" + traject.getDropoff_x() +
+                            traject.getPickup_y() + ";" + traject.getDropoff_x() + ";" +
                             traject.getDropoff_y() + "\n");
                 }
 
@@ -201,16 +201,21 @@ public class Main {
         containers.add(new Container(id, lengte));
     }
 
-    private static void parseAssignment(JSONObject data, Set<Assignment> assignement, ArrayList<Slot> slotLijst, ArrayList<Container> containers, int lengte){
+    private static void parseAssignment(JSONObject data, Set<Assignment> assignement, ArrayList<Slot> slotLijst, ArrayList<Container> containers){
         Long slot_id = (Long) data.get("slot_id");
         int container_id = ((Long) data.get("container_id")).intValue();
 
+        Container container = null;
         Assignment assignment = new Assignment(container_id);
-        Container container = containers.get(container_id);
+        for (Container c: containers){
+            if(c.getId()== container_id){
+                container = c;
+            }
+        }
 
         for(int j=0;j<container.getLengte();j++){
             for(int i=0; i<slotLijst.size(); i++){
-                if(slotLijst.get(i).getId()== slot_id + j * lengte){
+                if(slotLijst.get(i).getId() == slot_id + j){
                     assignment.addSlot(slotLijst.get(i));
                     break;
                 }
@@ -219,11 +224,11 @@ public class Main {
         assignement.add(assignment);
    }
 
-   private static void setStartPositie(Set<Assignment> assignments, ArrayList<Container> containers, CheckerBoardJavaExample checkerboard) {
+   private static void setStartPositie(Set<Assignment> assignments, ArrayList<Container> containers, CheckerBoard checkerboard) {
        containers.sort(Comparator.comparing(Container::getLengte));
 
        ArrayList<Slot> slotlist;
-       boolean plaatsen;
+       boolean plaatsen = true;
        Set<Assignment> wachtlijst = assignments;
        int hoogteStart;
 
@@ -232,11 +237,10 @@ public class Main {
                ArrayList<Assignment> executed_assignments = new ArrayList<>();
                for (Assignment assignment : wachtlijst) {
                    if (assignment.getContainer_id() == c.getId()) {
-                       plaatsen = true;
                        slotlist = assignment.getSlots();
-                       for (Slot slot : slotlist) {
+                       for (int i = 0; i < slotlist.size(); i++) {
                            hoogteStart = slotlist.get(0).getHoogte();
-                           if (slot.getHoogte() != hoogteStart) {
+                           if (slotlist.get(i).getHoogte() != hoogteStart) {
                                plaatsen = false;
                            }
                        }
@@ -253,7 +257,7 @@ public class Main {
        }
    }
 
-   public static void plaatsContainer(Container c, ArrayList<Slot> toegewezenSlots, CheckerBoardJavaExample checkerboard) {
+   public static void plaatsContainer(Container c, ArrayList<Slot> toegewezenSlots, CheckerBoard checkerboard) {
        c.setStart(toegewezenSlots.get(0));
        c.setEind(toegewezenSlots.get(toegewezenSlots.size()-1));
        for(Slot slot: toegewezenSlots) {
@@ -263,7 +267,7 @@ public class Main {
        }
    }
 
-   public static void verplaatsContainer(Container container, ArrayList<Slot> alleSlots, ArrayList<Slot> toegewezenSlots, CheckerBoardJavaExample checkerBoard) {
+   public static void verplaatsContainer(Container container, ArrayList<Slot> alleSlots, ArrayList<Slot> toegewezenSlots, CheckerBoard checkerBoard) {
         //container wordt van huidige locatie gehaald --> kleuren aanpassen
        int kleur = container.getStart().getHoogte() - 1;
        for (int i = container.getStart().getX(); i < container.getEind().getX()+1; i++) {
@@ -272,7 +276,6 @@ public class Main {
                for (Slot slot : alleSlots) {
                    if (slot.getX() == i && slot.getY() == j) {
                        slot.verwijderContainer();
-                       break;
                    }
                }
            }
@@ -280,18 +283,29 @@ public class Main {
        plaatsContainer(container, toegewezenSlots, checkerBoard);
    }
 
-   public static void doAssignments(Set<Assignment> toFinishAssignments, ArrayList<Kraan> kranen, ArrayList<Container> containers, int max_hoogte, ArrayList<Slot> slots, CheckerBoardJavaExample checkerBoard, int tijd, ArrayList<Traject> trajecten ) {
+   public static void doAssignments(Set<Assignment> toFinishAssignments, ArrayList<Kraan> kranen, ArrayList<Container> containers, int max_hoogte, ArrayList<Slot> slots, CheckerBoard checkerBoard, double tijd, ArrayList<Traject> trajecten ) {
         while (!toFinishAssignments.isEmpty()) {
             ArrayList<Assignment> executed_assignments = new ArrayList<>();
             for (Assignment assignment : toFinishAssignments) {
-                int positieContainerX = containers.get(assignment.getContainer_id()).getStart().getX();
-                double positiePickupX = positieContainerX + 0.5;
+                Container container = null;
+                for (Container c: containers){
+                    if(c.getId()== assignment.getContainer_id()){
+                        container = c;
+                    }
+                }
 
-                int positieContainerY = containers.get(assignment.getContainer_id()).getStart().getY();
-                double positiePickupY = positieContainerY + (containers.get(assignment.getContainer_id()).getLengte() / 2.0);
+                int positieContainerX = container.getStart().getX();
+                double positiePickupX = positieContainerX + (container.getLengte() / 2.0);
+
+                int positieContainerY = container.getStart().getY();
+                double positiePickupY = positieContainerY + 0.5;
+
+                System.out.println("container x  " +positieContainerX  + " " + assignment.getSlots().get(0).getX() );
+                System.out.println("container y  " +positieContainerY  + " " + assignment.getSlots().get(0).getY() );
 
                 if (positieContainerX == assignment.getSlots().get(0).getX() && positieContainerY == assignment.getSlots().get(0).getY()) {
                     executed_assignments.add(assignment);
+                    System.out.println("****DEZELFDE PLEK*****");
                     continue;
                 }
 
@@ -313,15 +327,15 @@ public class Main {
                         if (containerBegin.getStart() == slotBegin && containerEind.getEind() == slotEind) {
                             containerEronderOke = true;
                         }
-                    } else {
+                    }
+                    else{
                         containerEronderOke = true; //voor wanneer er geen container onderstaat
                     }
                 }
 
                 ArrayList<Kraan> kranenToDoAssignment = new ArrayList<>();
-                //kranen coordinaten
-                double positieEindY = assignment.getSlots().get(0).getY() + (containers.get(assignment.getContainer_id()).getLengte() / 2.0);
-                double positieEindX = assignment.getSlots().get(0).getX() + 0.5;
+                double positieEindX = assignment.getSlots().get(0).getX() + (container.getLengte() / 2.0);
+                double positieEindY = assignment.getSlots().get(0).getY() + 0.5;
                 double eindeX = positieEindX;
                 double eindeY = positieEindY;
                 if (containerEronderOke) {
@@ -332,22 +346,20 @@ public class Main {
                         for (Kraan kraan : kranen) {
                             if (positieBeginX <= kraan.getX_maximum() && positieBeginX >= kraan.getX_minimum() && positieBeginY <= kraan.getY_maximum() && positieBeginY >= kraan.getY_minimum()) {
                                 kranenToDoAssignment.add(kraan);
-                                if (eindeX <= kraan.getX_maximum() && eindeX >= kraan.getX_minimum() && eindeY <= kraan.getY_maximum() && eindeY >= kraan.getY_minimum()) {
+                                if (positieEindX <= kraan.getX_maximum() && positieEindX >= kraan.getX_minimum() && positieEindY <= kraan.getY_maximum() && positieEindY >= kraan.getY_minimum()) {
                                     eindeX = positieBeginX;
                                     eindeY = positieBeginY;
                                     break;
                                 } else {
-                                    if (moveLeft(eindeY, positieBeginY)) {
-                                        positieBeginY = kraan.getY_minimum();
-                                    }
-                                    else if (moveRight(eindeY, positieBeginY)) {
-                                        positieBeginY = kraan.getY_maximum();
-                                    }
-                                    if (moveUp(eindeX, positieBeginX)) {
+                                    if (moveLeft(eindeX, positieBeginX)) {
                                         positieBeginX = kraan.getX_minimum();
-                                    }
-                                    else if (moveDown(eindeX, positieBeginX)) {
+                                    } else if(moveRight(eindeX, positieBeginX)){
                                         positieBeginX = kraan.getX_maximum();
+                                    }
+                                    if (moveUp(eindeY, positieBeginY)) {
+                                        positieBeginY = kraan.getY_minimum();
+                                    } else if(moveDown(eindeY, positieBeginY)) {
+                                        positieBeginY = kraan.getY_maximum();
                                     }
                                 }
 
@@ -355,7 +367,6 @@ public class Main {
                         }
                     }
                 }
-
                 double beginX = positiePickupX;
                 double beginY = positiePickupY;
                 ArrayList<Slot> toegewezenSlots;
@@ -363,19 +374,19 @@ public class Main {
                     double eindX = positieEindX;
                     double eindY = positieEindY;
                     toegewezenSlots = new ArrayList<>(assignment.getSlots());
-                    if (kranenToDoAssignment.get(i).getY_minimum() > eindY || kranenToDoAssignment.get(i).getY_maximum() < eindY) {
+                    if (kranenToDoAssignment.get(i).getX_minimum() > eindX || kranenToDoAssignment.get(i).getX_maximum() < eindX) {
                         toegewezenSlots.clear();
-                        if (moveLeft(eindY, beginY)) {
-                            eindY = kranenToDoAssignment.get(i).getY_minimum();
-                        }
-                        else if (moveRight(eindY, beginY)){
-                            eindY = kranenToDoAssignment.get(i).getY_maximum();
-                        }
-                        if (moveUp(eindX, beginX)) {
+                        if (moveLeft(eindX, beginX)) {
                             eindX = kranenToDoAssignment.get(i).getX_minimum();
                         }
-                        else if (moveDown(eindX, beginX)) {
+                        else if(moveRight(eindX, beginX)){
                             eindX = kranenToDoAssignment.get(i).getX_maximum();
+                        }
+                        if(moveUp(eindY, beginY)){
+                            eindY = kranenToDoAssignment.get(i).getY_minimum();
+                        }
+                        else if(moveDown(eindY, beginY)){
+                            eindY = kranenToDoAssignment.get(i).getY_maximum();
                         }
                         for (int j = 0; j < slots.size(); j++) {
                             if (Math.floor(eindX) == slots.get(j).getX() && slots.get(j).getY() == Math.floor(eindY)) {
@@ -387,18 +398,20 @@ public class Main {
                         }
                     }
                     tijd = zetKranenOpzij(kranen, kranenToDoAssignment.get(i), beginX, eindX, tijd, trajecten);
-                    verplaatsContainer(containers.get(assignment.getContainer_id()), slots, toegewezenSlots, checkerBoard);
-                    int startPickupTime = berekenPickup(kranenToDoAssignment.get(i), positiePickupX, positiePickupY, tijd);
-                    int endPickupTime = berekenVerplaatsing(kranenToDoAssignment.get(i), positiePickupX, positiePickupY, eindX, eindY, tijd);
+                    System.out.println("container id  " +assignment.getContainer_id() + " "+  assignment.getSlots().get(0).getId());
+                    verplaatsContainer(container, slots, toegewezenSlots, checkerBoard);
+                    double startPickupTime = berekenPickup(kranenToDoAssignment.get(i), positiePickupX, positiePickupY, tijd);
+                    double endPickupTime = startPickupTime + berekenVerplaatsing(kranenToDoAssignment.get(i), positiePickupX, positiePickupY, eindX, eindY);
                     Traject traject = new Traject(kranenToDoAssignment.get(i).getX_coordinaat(), kranenToDoAssignment.get(i).getY_coordinaat(),
                             tijd, positiePickupX, positiePickupY, eindX, eindY, startPickupTime, endPickupTime, kranenToDoAssignment.get(i), assignment.getContainer_id());
-                   kranenToDoAssignment.get(i).setX_coordinaat(eindX);
-                   kranenToDoAssignment.get(i).setY_coordinaat(eindY);
-                   tijd=endPickupTime;
-                   trajecten.add(traject);
-                   executed_assignments.add(assignment);
-                   beginY = eindY;
-                   beginX = eindX;
+                    kranenToDoAssignment.get(i).setX_coordinaat(eindX);
+                    kranenToDoAssignment.get(i).setY_coordinaat(eindY);
+                    tijd=endPickupTime;
+                    trajecten.add(traject);
+                    executed_assignments.add(assignment);
+                    System.out.println("*********");
+                    beginY = eindY;
+                    beginX = eindX;
                 }
 
             }
@@ -406,128 +419,136 @@ public class Main {
                 toFinishAssignments.remove(assignment);
             }
         }
-        System.out.println("klaar");
    }
 
-    private static int berekenVerplaatsing(Kraan kraan, double pickX, double pickY, double eindX, double eindY, int tijd) {
-        int pickupTijd;
-        int x_snelheid = (int)(Math.abs(eindX-pickX) * kraan.getX_snelheid());
-        int y_snelheid =  (int)(Math.abs(eindY-pickY) * kraan.getY_snelheid());
+    private static double berekenVerplaatsing(Kraan kraan, double pickX, double pickY, double eindX, double eindY) {
+        double verplaatsingTijd;
+        double x_snelheid = Math.abs(eindX-pickX) * kraan.getX_snelheid();
+        double y_snelheid = Math.abs(eindY-pickY) * kraan.getY_snelheid();
+        verplaatsingTijd = Math.max(x_snelheid, y_snelheid);
+        return verplaatsingTijd;
+    }
+
+    private static double berekenPickup(Kraan kraan, double positiePickupX, double positiePickupY, double tijd) {
+        double pickupTijd;
+        double x_snelheid = Math.abs(kraan.getX_coordinaat()-positiePickupX) * kraan.getX_snelheid();
+        double y_snelheid = Math.abs(kraan.getY_coordinaat()-positiePickupY) * kraan.getY_snelheid();
         pickupTijd = tijd + Math.max(x_snelheid, y_snelheid);
         return pickupTijd;
     }
 
-    private static int berekenPickup(Kraan kraan, double positiePickupX, double positiePickupY, int tijd) {
-        int pickupTijd;
-        int x_snelheid = (int)(Math.abs(kraan.getX_coordinaat()-positiePickupX) * kraan.getX_snelheid());
-        int y_snelheid =  (int)(Math.abs(kraan.getY_coordinaat()-positiePickupY) * kraan.getY_snelheid());
-        pickupTijd = tijd + Math.max(x_snelheid, y_snelheid);
-        return pickupTijd;
-    }
-
-    public static boolean moveLeft(double y_eind, double y_begin) {
-        if (y_eind < y_begin) {
-            return true;
-        }
-        return false;
-    }
-
-    public static boolean moveRight(double y_eind, double y_begin) {
+    private static boolean moveDown(double y_eind, double y_begin) {
         if (y_eind > y_begin) {
             return true;
         }
         return false;
     }
 
-    public static boolean moveUp(Double x_eind, double x_begin) {
-        if (x_eind < x_begin) {
-            return true;
-        }
-        return false;
-    }
-
-    public static boolean moveDown(Double x_eind, double x_begin) {
+    private static boolean moveRight(double x_eind, double x_begin) {
         if (x_eind > x_begin) {
             return true;
         }
         return false;
     }
 
+    public static boolean moveLeft(double x_eind, double x_begin) {
+        if (x_eind < x_begin) {
+            return true;
+        }
+        return false;
+    }
 
-    public static int zetKranenOpzij(ArrayList<Kraan> kranen, Kraan kraan, double beginY, double eindY, int tijd, ArrayList<Traject> trajecten) {
+    public static boolean moveUp(Double y_eind, double y_begin) {
+        if (y_eind < y_begin) {
+            return true;
+        }
+        return false;
+    }
+
+    public static double zetKranenOpzij(ArrayList<Kraan> kranen, Kraan kraan, double beginX, double eindX, double tijd, ArrayList<Traject> trajecten) {
         for(Kraan andereKraan: kranen){
             if (!Objects.equals(andereKraan, kraan)) {
-                if (moveLeft(eindY, beginY)) {
-                    if (andereKraan.getY_coordinaat() >= beginY && andereKraan.getY_coordinaat() <= eindY) {
-                        if ((andereKraan.getY_maximum() - andereKraan.getY_minimum() / 2) + 1 < beginY || ((andereKraan.getY_maximum() - andereKraan.getY_minimum() / 2)) - 1 > eindY) {
-                            int eindTijd = (int) (tijd + Math.abs(andereKraan.getY_coordinaat() - (andereKraan.getY_maximum() - andereKraan.getY_minimum() / 2)) * andereKraan.getY_snelheid());
+                if (moveLeft(eindX, beginX)) {
+                    if (andereKraan.getX_coordinaat() >= beginX && andereKraan.getX_coordinaat() <= eindX) {
+                        if ((andereKraan.getX_maximum() - andereKraan.getX_minimum() / 2) + 1 < beginX || ((andereKraan.getX_maximum() - andereKraan.getX_minimum() / 2)) - 1 > eindX) {
+                            int eindTijd = (int) (tijd + Math.abs(andereKraan.getX_coordinaat() - (andereKraan.getX_maximum() - andereKraan.getX_minimum() / 2)) * andereKraan.getX_snelheid());
                             trajecten.add(new Traject(andereKraan.getX_coordinaat(), andereKraan.getY_coordinaat(), tijd, 0, 0, andereKraan.getX_coordinaat(), (andereKraan.getY_maximum() - andereKraan.getY_minimum() / 2), tijd, eindTijd, andereKraan, -1));
-                            andereKraan.setY_coordinaat((andereKraan.getY_maximum() - andereKraan.getY_minimum() / 2));
+                            andereKraan.setX_coordinaat((andereKraan.getX_maximum() - andereKraan.getX_minimum() / 2));
                             tijd = eindTijd;
+                            System.out.println("empty move");
                         }
-                        else if (beginY-1 >= andereKraan.getY_minimum() && beginY-1 <= andereKraan.getY_maximum()){
-                            int eindTijd = (int) (tijd + Math.abs(andereKraan.getY_coordinaat() - (beginY-1)) * andereKraan.getY_snelheid());
-                            trajecten.add(new Traject(andereKraan.getX_coordinaat(), andereKraan.getY_coordinaat(), tijd, 0, 0, andereKraan.getX_coordinaat(), beginY-1, tijd, eindTijd, andereKraan, -1));
-                            andereKraan.setY_coordinaat(beginY-1);
+                        else if (beginX-1 >= andereKraan.getX_minimum() && beginX-1 <= andereKraan.getX_maximum()){
+                            int eindTijd = (int) (tijd + Math.abs(andereKraan.getX_coordinaat() - (beginX-1)) * andereKraan.getX_snelheid());
+                            trajecten.add(new Traject(andereKraan.getX_coordinaat(), andereKraan.getY_coordinaat(), tijd, 0, 0,beginX-1, andereKraan.getY_coordinaat(), tijd, eindTijd, andereKraan, -1));
+                            andereKraan.setX_coordinaat(beginX-1);
                             tijd = eindTijd;
+                            System.out.println("empty move");
                         }
-                        else if (eindY + 1 >= andereKraan.getY_minimum() && eindY + 1 <= andereKraan.getY_maximum()) {
-                            int eindTijd = (int) (tijd + Math.abs(andereKraan.getY_coordinaat() - (eindY+1)) * andereKraan.getY_snelheid());
-                            trajecten.add(new Traject(andereKraan.getX_coordinaat(), andereKraan.getY_coordinaat(), tijd, 0, 0, andereKraan.getX_coordinaat(), eindY + 1, tijd, eindTijd, andereKraan, -1));
-                            andereKraan.setY_coordinaat(eindY + 1);
+                        else if (eindX + 1 >= andereKraan.getX_minimum() && eindX + 1 <= andereKraan.getX_maximum()) {
+                            int eindTijd = (int) (tijd + Math.abs(andereKraan.getX_coordinaat() - (eindX+1)) * andereKraan.getX_snelheid());
+                            trajecten.add(new Traject(andereKraan.getX_coordinaat(), andereKraan.getY_coordinaat(), tijd, 0, 0,eindX + 1, andereKraan.getY_coordinaat(), tijd, eindTijd, andereKraan, -1));
+                            andereKraan.setX_coordinaat(eindX + 1);
                             tijd = eindTijd;
+                            System.out.println("empty move");
                         }
-                        else if (andereKraan.getY_minimum() < beginY-1) {
-                            int eindTijd = (int) (tijd + Math.abs(andereKraan.getY_coordinaat() - andereKraan.getY_minimum()) * andereKraan.getY_snelheid());
-                            trajecten.add(new Traject(andereKraan.getX_coordinaat(), andereKraan.getY_coordinaat(), tijd, 0, 0, andereKraan.getX_coordinaat(), andereKraan.getY_minimum(), tijd, eindTijd, andereKraan, -1));
-                            andereKraan.setY_coordinaat(andereKraan.getY_minimum());
+                        else if (andereKraan.getX_minimum() < beginX-1) {
+                            int eindTijd = (int) (tijd + Math.abs(andereKraan.getX_coordinaat() - andereKraan.getX_minimum()) * andereKraan.getX_snelheid());
+                            trajecten.add(new Traject(andereKraan.getX_coordinaat(), andereKraan.getY_coordinaat(), tijd, 0, 0, andereKraan.getX_minimum(), andereKraan.getY_coordinaat(), tijd, eindTijd, andereKraan, -1));
+                            andereKraan.setX_coordinaat(andereKraan.getX_minimum());
                             tijd = eindTijd;
+                            System.out.println("empty move");
                         }
-                        else if (andereKraan.getY_maximum() > eindY + 1) {
-                            int eindTijd = (int) (tijd + Math.abs(andereKraan.getY_coordinaat() - andereKraan.getY_maximum()) * andereKraan.getY_snelheid());
-                            trajecten.add(new Traject(andereKraan.getX_coordinaat(), andereKraan.getY_coordinaat(), tijd, 0, 0, andereKraan.getX_coordinaat(), andereKraan.getY_maximum(), tijd, eindTijd, andereKraan, -1));
-                            andereKraan.setY_coordinaat(andereKraan.getY_maximum());
+                        else if (andereKraan.getX_maximum() > eindX + 1) {
+                            int eindTijd = (int) (tijd + Math.abs(andereKraan.getX_coordinaat() - andereKraan.getX_maximum()) * andereKraan.getX_snelheid());
+                            trajecten.add(new Traject(andereKraan.getX_coordinaat(), andereKraan.getY_coordinaat(), tijd, 0, 0, andereKraan.getX_maximum(), andereKraan.getY_coordinaat(), tijd, eindTijd, andereKraan, -1));
+                            andereKraan.setX_coordinaat(andereKraan.getX_maximum());
                             tijd = eindTijd;
+                            System.out.println("empty move");
                         }
                     }
                 }
-                else if (moveRight(eindY, beginY)){
-                    if (andereKraan.getY_coordinaat() <= beginY && andereKraan.getY_coordinaat() >= eindY) {
-                        if ((andereKraan.getY_maximum() - andereKraan.getY_minimum() / 2) + 1 > beginY || ((andereKraan.getY_maximum() - andereKraan.getY_minimum() / 2)) - 1 < eindY) {
-                            int eindTijd = (int) (tijd + Math.abs(andereKraan.getY_coordinaat() - (andereKraan.getY_maximum() - andereKraan.getY_minimum() / 2)) * andereKraan.getY_snelheid());
-                            trajecten.add(new Traject(andereKraan.getX_coordinaat(), andereKraan.getY_coordinaat(), tijd, 0, 0,andereKraan.getX_coordinaat() , (andereKraan.getY_maximum() - andereKraan.getY_minimum() / 2), tijd, eindTijd, andereKraan, -1));
-                            andereKraan.setY_coordinaat((andereKraan.getY_maximum() - andereKraan.getY_minimum() / 2));
+                else if (moveRight(eindX, beginX)){
+                    if (andereKraan.getX_coordinaat() <= beginX && andereKraan.getX_coordinaat() >= eindX) {
+                        if ((andereKraan.getX_maximum() - andereKraan.getX_minimum() / 2) + 1 > beginX || ((andereKraan.getX_maximum() - andereKraan.getX_minimum() / 2)) - 1 < eindX) {
+                            int eindTijd = (int) (tijd + Math.abs(andereKraan.getX_coordinaat() - (andereKraan.getX_maximum() - andereKraan.getX_minimum() / 2)) * andereKraan.getY_snelheid());
+                            trajecten.add(new Traject(andereKraan.getX_coordinaat(), andereKraan.getY_coordinaat(), tijd, 0, 0, (andereKraan.getX_maximum() - andereKraan.getX_minimum() / 2), andereKraan.getY_coordinaat() , tijd, eindTijd, andereKraan, -1));
+                            andereKraan.setX_coordinaat((andereKraan.getX_maximum() - andereKraan.getX_minimum() / 2));
                             tijd = eindTijd;
+                            System.out.println("empty move");
                         }
-                        else if (beginY-1 <= andereKraan.getY_minimum() && beginY-1 >= andereKraan.getY_maximum()){
-                            int eindTijd = (int) (tijd + Math.abs(andereKraan.getY_coordinaat() - (beginY-1)) * andereKraan.getY_snelheid());
-                            trajecten.add(new Traject(andereKraan.getX_coordinaat(), andereKraan.getY_coordinaat(), tijd, 0, 0, andereKraan.getX_coordinaat(), beginY-1, tijd, eindTijd, andereKraan, -1));
-                            andereKraan.setY_coordinaat(beginY-1);
+                        else if (beginX-1 <= andereKraan.getX_minimum() && beginX-1 >= andereKraan.getX_maximum()){
+                            int eindTijd = (int) (tijd + Math.abs(andereKraan.getX_coordinaat() - (beginX-1)) * andereKraan.getX_snelheid());
+                            trajecten.add(new Traject(andereKraan.getX_coordinaat(), andereKraan.getY_coordinaat(), tijd, 0, 0, beginX-1, andereKraan.getY_coordinaat(),  tijd, eindTijd, andereKraan, -1));
+                            andereKraan.setX_coordinaat(beginX-1);
                             tijd = eindTijd;
+                            System.out.println("empty move");
                         }
-                        else if (eindY + 1 <= andereKraan.getY_minimum() && eindY + 1 >= andereKraan.getY_maximum()) {
-                            int eindTijd = (int) (tijd + Math.abs(andereKraan.getY_coordinaat() - (eindY+1)) * andereKraan.getY_snelheid());
-                            trajecten.add(new Traject(andereKraan.getX_coordinaat(), andereKraan.getY_coordinaat(), tijd, 0, 0, andereKraan.getX_coordinaat(), eindY + 1, tijd, eindTijd, andereKraan, -1));
-                            andereKraan.setY_coordinaat(eindY + 1);
+                        else if (eindX + 1 <= andereKraan.getX_minimum() && eindX + 1 >= andereKraan.getX_maximum()) {
+                            int eindTijd = (int) (tijd + Math.abs(andereKraan.getX_coordinaat() - (eindX+1)) * andereKraan.getX_snelheid());
+                            trajecten.add(new Traject(andereKraan.getX_coordinaat(), andereKraan.getY_coordinaat(), tijd, 0, 0,eindX + 1,andereKraan.getY_coordinaat(), tijd, eindTijd, andereKraan, -1));
+                            andereKraan.setX_coordinaat(eindX + 1);
                             tijd = eindTijd;
+                            System.out.println("empty move");
                         }
-                        else if (andereKraan.getY_minimum() > beginY-1) {
-                            int eindTijd = (int) (tijd + Math.abs(andereKraan.getY_coordinaat() - andereKraan.getY_minimum()) * andereKraan.getY_snelheid());
-                            trajecten.add(new Traject(andereKraan.getX_coordinaat(), andereKraan.getY_coordinaat(), tijd, 0, 0, andereKraan.getX_coordinaat(), andereKraan.getY_minimum(), tijd, eindTijd, andereKraan, -1));
-                            andereKraan.setY_coordinaat(andereKraan.getY_minimum());
+                        else if (andereKraan.getX_minimum() > beginX-1) {
+                            int eindTijd = (int) (tijd + Math.abs(andereKraan.getX_coordinaat() - andereKraan.getX_minimum()) * andereKraan.getX_snelheid());
+                            trajecten.add(new Traject(andereKraan.getX_coordinaat(), andereKraan.getY_coordinaat(), tijd, 0, 0, andereKraan.getX_minimum(), andereKraan.getY_coordinaat(), tijd, eindTijd, andereKraan, -1));
+                            andereKraan.setX_coordinaat(andereKraan.getX_minimum());
                             tijd = eindTijd;
+                            System.out.println("empty move");
                         }
-                        else if (andereKraan.getY_maximum() < eindY + 1) {
-                            int eindTijd = (int) (tijd + Math.abs(andereKraan.getY_coordinaat() - andereKraan.getY_maximum()) * andereKraan.getY_snelheid());
-                            trajecten.add(new Traject(andereKraan.getX_coordinaat(), andereKraan.getY_coordinaat(), tijd, 0, 0, andereKraan.getX_coordinaat(), andereKraan.getY_maximum(), tijd, eindTijd, andereKraan, -1));
-                            andereKraan.setY_coordinaat(andereKraan.getY_maximum());
+                        else if (andereKraan.getX_maximum() < eindX + 1) {
+                            int eindTijd = (int) (tijd + Math.abs(andereKraan.getX_coordinaat() - andereKraan.getX_maximum()) * andereKraan.getX_snelheid());
+                            trajecten.add(new Traject(andereKraan.getX_coordinaat(), andereKraan.getY_coordinaat(), tijd, 0, 0, andereKraan.getX_maximum(), andereKraan.getY_coordinaat(), tijd, eindTijd, andereKraan, -1));
+                            andereKraan.setX_coordinaat(andereKraan.getX_maximum());
                             tijd = eindTijd;
+                            System.out.println("empty move");
                         }
                     }
+
                 }
             }
         }
-        return tijd;
+    return tijd;
     }
 }
-
