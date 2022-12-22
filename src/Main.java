@@ -26,7 +26,7 @@ public class Main {
 
         double tijd = 0;
 
-        try (FileReader reader = new FileReader("data/5t/TerminalB_20_10_3_2_160.json")){
+        try (FileReader reader = new FileReader("data/1t/TerminalA_20_10_3_2_100.json")){
             Object obj = jsonParser.parse(reader);
             JSONObject jsonObject = (JSONObject)obj;
 
@@ -291,6 +291,7 @@ public class Main {
                 for (Container c: containers){
                     if(c.getId()== assignment.getContainer_id()){
                         container = c;
+                         break;
                     }
                 }
 
@@ -336,36 +337,11 @@ public class Main {
                 ArrayList<Kraan> kranenToDoAssignment = new ArrayList<>();
                 double positieEindX = assignment.getSlots().get(0).getX() + (container.getLengte() / 2.0);
                 double positieEindY = assignment.getSlots().get(0).getY() + 0.5;
-                double eindeX = positieEindX;
-                double eindeY = positieEindY;
                 if (containerEronderOke) {
                     double positieBeginX = positiePickupX;
                     double positieBeginY = positiePickupY;
+                    vindKranen(positieBeginX, positieBeginY, positieEindX, positieEindY, kranen, kranenToDoAssignment);
 
-                    while (positieBeginX != eindeX || positieBeginY != eindeY) {
-                        for (Kraan kraan : kranen) {
-                            if (positieBeginX <= kraan.getX_maximum() && positieBeginX >= kraan.getX_minimum() && positieBeginY <= kraan.getY_maximum() && positieBeginY >= kraan.getY_minimum()) {
-                                kranenToDoAssignment.add(kraan);
-                                if (positieEindX <= kraan.getX_maximum() && positieEindX >= kraan.getX_minimum() && positieEindY <= kraan.getY_maximum() && positieEindY >= kraan.getY_minimum()) {
-                                    eindeX = positieBeginX;
-                                    eindeY = positieBeginY;
-                                    break;
-                                } else {
-                                    if (moveLeft(eindeX, positieBeginX)) {
-                                        positieBeginX = kraan.getX_minimum();
-                                    } else if(moveRight(eindeX, positieBeginX)){
-                                        positieBeginX = kraan.getX_maximum();
-                                    }
-                                    if (moveUp(eindeY, positieBeginY)) {
-                                        positieBeginY = kraan.getY_minimum();
-                                    } else if(moveDown(eindeY, positieBeginY)) {
-                                        positieBeginY = kraan.getY_maximum();
-                                    }
-                                }
-
-                            }
-                        }
-                    }
                 }
                 double beginX = positiePickupX;
                 double beginY = positiePickupY;
@@ -550,5 +526,35 @@ public class Main {
             }
         }
     return tijd;
+    }
+
+    public static ArrayList<Kraan> vindKranen(double positieBeginX, double positieBeginY, double positieEindX, double positieEindY, ArrayList<Kraan> kranen, ArrayList<Kraan> kranenToDoAssignment) {
+        double eindeX = positieEindX;
+        double eindeY = positieEindY;
+        while (positieBeginX != eindeX || positieBeginY != eindeY) {
+            for (Kraan kraan : kranen) {
+                if (positieBeginX <= kraan.getX_maximum() && positieBeginX >= kraan.getX_minimum() && positieBeginY <= kraan.getY_maximum() && positieBeginY >= kraan.getY_minimum()) {
+                    kranenToDoAssignment.add(kraan);
+                    if (positieEindX <= kraan.getX_maximum() && positieEindX >= kraan.getX_minimum() && positieEindY <= kraan.getY_maximum() && positieEindY >= kraan.getY_minimum()) {
+                        eindeX = positieBeginX;
+                        eindeY = positieBeginY;
+                        break;
+                    } else {
+                        if (moveLeft(eindeX, positieBeginX)) {
+                            positieBeginX = kraan.getX_minimum();
+                        } else if(moveRight(eindeX, positieBeginX)){
+                            positieBeginX = kraan.getX_maximum();
+                        }
+                        if (moveUp(eindeY, positieBeginY)) {
+                            positieBeginY = kraan.getY_minimum();
+                        } else if(moveDown(eindeY, positieBeginY)) {
+                            positieBeginY = kraan.getY_maximum();
+                        }
+                    }
+
+                }
+            }
+        }
+        return kranenToDoAssignment;
     }
 }
