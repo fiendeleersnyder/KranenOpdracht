@@ -11,6 +11,11 @@ public class Slot {
         this.hoogte = new Stack();
     }
 
+    public Slot(int x, int y) {
+        this.x = x;
+        this.y = y;
+    }
+
     public int getId() { return id; }
 
     public void setId(int id) {
