@@ -26,7 +26,7 @@ public class Main {
 
         double tijd = 0;
 
-        try (FileReader reader = new FileReader("data/1t/TerminalA_20_10_3_2_100.json")){
+        try (FileReader reader = new FileReader("data/terminal5_5target.json")) {
             Object obj = jsonParser.parse(reader);
             JSONObject jsonObject = (JSONObject)obj;
 
@@ -119,14 +119,13 @@ public class Main {
         button.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                //if(finalTargetHeight!=0) {
-                doAssignments(toFinishAssignments, kranen, containers, finalMaxHeight, slots, CheckerBoard, tijd, trajecten);
-                //} //else minimizeHeight();
+                if (finalTargetHeight == 0) {
+                    checkAndPlace(toFinishAssignments, kranen, containers, finalMaxHeight, slots, CheckerBoard, tijd, trajecten);
+                } else
+                    minimize(kranen, containers, finalTargetHeight, slots, CheckerBoard, tijd, trajecten, finalLength);
             }
         });
         legende.add(button);
-
-        //minimize(kranen, containers, finalMaxHeight, slots, CheckerBoard, tijd, trajecten);
 
         JButton b2 = new JButton("Get outputfile");
         String finalName = name;
@@ -181,8 +180,8 @@ public class Main {
                     else{
                         //containers op een andere container van 1 plaatsen
                         Slot vrijSlot = container.getStart();
-                        for(Slot slot: slots){
-                            if(slot.getContainer(slot.getHoogte()).getLengte()==1){
+                        for (Slot slot : slots) {
+                            if (slot.getContainer(slot.getHoogte() - 1).getLengte() == 1 && slot.getHoogte() + 1 <= finalTargetHeight) {
                                 vrijSlot = slot;
                                 break;
                             }
@@ -212,7 +211,7 @@ public class Main {
         ArrayList<Container> teHogeContainers = new ArrayList<>();
         for (Slot slot: slots) {
             if (slot.getHoogte() > targetHeight) {
-                for(int i=targetHeight; i<= slot.getHoogte();i++){
+                for(int i=targetHeight; i< slot.getHoogte();i++){
                     if(!teHogeContainers.contains(slot.getContainer(i))){
                         teHogeContainers.add(slot.getContainer(i));
                     }
@@ -222,13 +221,29 @@ public class Main {
         return teHogeContainers;
     }
 
-    public static ArrayList<Slot> vindLegeSlots(ArrayList<Slot> slots) {
+    public static ArrayList<Slot> vindLegeSlots(ArrayList<Slot> slots, int lengte) {
         ArrayList<Slot> legeSlots = new ArrayList<>();
         for (Slot slot: slots) {
             if (slot.getHoogte()==0) {
                 legeSlots.add(slot);
             }
         }
+        ArrayList<Slot> kleineSlots= new ArrayList<>();
+        for (Slot slot: legeSlots) {
+            if (slot.getX() == 1 && slot.getX() != 0|| slot.getX() == lengte+1 && slots.get(slot.getId()-1).getHoogte() != 0) {
+                kleineSlots.add(slot);
+            }
+            else if (slots.get(slot.getId()-1).getHoogte() == 0 && slots.get(slot.getId()+1).getHoogte() == 0) {
+                kleineSlots.add(slot);
+            }
+        }
+        for (Slot slot: legeSlots) {
+            legeSlots.remove(slot);
+        }
+        ArrayList<Slot> emptySlots = new ArrayList<>();
+        emptySlots.addAll(kleineSlots);
+        emptySlots.addAll(legeSlots);
+
         return legeSlots;
     }
 
@@ -615,33 +630,122 @@ public class Main {
     return tijd;
     }
 
-    public static ArrayList<Kraan> vindKranen(double positieBeginX, double positieBeginY, double positieEindX, double positieEindY, ArrayList<Kraan> kranen, ArrayList<Kraan> kranenToDoAssignment) {
+    public static void vindKranen(double positieBeginX, double positieBeginY, double positieEindX, double positieEindY, ArrayList<Kraan> kranen, ArrayList<Kraan> kranenToDoAssignment) {
         double eindeX = positieEindX;
         double eindeY = positieEindY;
-        while (positieBeginX != eindeX || positieBeginY != eindeY) {
-            for (Kraan kraan : kranen) {
-                if (positieBeginX <= kraan.getX_maximum() && positieBeginX >= kraan.getX_minimum() && positieBeginY <= kraan.getY_maximum() && positieBeginY >= kraan.getY_minimum()) {
-                    kranenToDoAssignment.add(kraan);
-                    if (positieEindX <= kraan.getX_maximum() && positieEindX >= kraan.getX_minimum() && positieEindY <= kraan.getY_maximum() && positieEindY >= kraan.getY_minimum()) {
-                        eindeX = positieBeginX;
-                        eindeY = positieBeginY;
-                        break;
-                    } else {
-                        if (moveLeft(eindeX, positieBeginX)) {
-                            positieBeginX = kraan.getX_minimum();
-                        } else if(moveRight(eindeX, positieBeginX)){
-                            positieBeginX = kraan.getX_maximum();
+        for (Kraan kraan: kranen) {
+            if (positieBeginX <= kraan.getX_maximum() && positieBeginX >= kraan.getX_minimum() && positieBeginY <= kraan.getY_maximum() && positieBeginY >= kraan.getY_minimum()
+                    && positieEindX <= kraan.getX_maximum() && positieEindX >= kraan.getX_minimum() && positieEindY <= kraan.getY_maximum() && positieEindY >= kraan.getY_minimum()) {
+                kranenToDoAssignment.add(kraan);
+                break;
+            }
+        }
+        if (kranenToDoAssignment.isEmpty()) {
+            while (positieBeginX != eindeX || positieBeginY != eindeY) {
+                for (Kraan kraan : kranen) {
+                    if (positieBeginX <= kraan.getX_maximum() && positieBeginX >= kraan.getX_minimum() && positieBeginY <= kraan.getY_maximum() && positieBeginY >= kraan.getY_minimum()) {
+                        kranenToDoAssignment.add(kraan);
+                        if (positieEindX <= kraan.getX_maximum() && positieEindX >= kraan.getX_minimum() && positieEindY <= kraan.getY_maximum() && positieEindY >= kraan.getY_minimum()) {
+                            eindeX = positieBeginX;
+                            eindeY = positieBeginY;
+                            break;
+                        } else {
+                            if (moveLeft(eindeX, positieBeginX)) {
+                                positieBeginX = kraan.getX_minimum();
+                            } else if (moveRight(eindeX, positieBeginX)) {
+                                positieBeginX = kraan.getX_maximum();
+                            }
+                            if (moveUp(eindeY, positieBeginY)) {
+                                positieBeginY = kraan.getY_minimum();
+                            } else if (moveDown(eindeY, positieBeginY)) {
+                                positieBeginY = kraan.getY_maximum();
+                            }
                         }
-                        if (moveUp(eindeY, positieBeginY)) {
-                            positieBeginY = kraan.getY_minimum();
-                        } else if(moveDown(eindeY, positieBeginY)) {
-                            positieBeginY = kraan.getY_maximum();
-                        }
-                    }
 
+                    }
                 }
             }
         }
-        return kranenToDoAssignment;
+
     }
+
+    public static void doAssignment(double positiePickupX, double positiePickupY, ArrayList<Kraan> kranenToDoAssignment, double positieEindX, double positieEindY, double tijd, ArrayList<Slot> slots, ArrayList<Slot> assignmentSlots, ArrayList<Kraan> kranen, ArrayList<Traject> trajecten, Container container, CheckerBoard checkerBoard) {
+        double beginX = positiePickupX;
+        double beginY = positiePickupY;
+        ArrayList<Slot> toegewezenSlots;
+        for (int i = 0; i < kranenToDoAssignment.size(); i++) {
+            double eindX = positieEindX;
+            double eindY = positieEindY;
+            toegewezenSlots = new ArrayList<>(assignmentSlots);
+            if (kranenToDoAssignment.get(i).getX_minimum() > eindX || kranenToDoAssignment.get(i).getX_maximum() < eindX) {
+                toegewezenSlots.clear();
+                if (moveLeft(eindX, beginX)) {
+                    eindX = kranenToDoAssignment.get(i).getX_minimum();
+                } else if (moveRight(eindX, beginX)) {
+                    eindX = kranenToDoAssignment.get(i).getX_maximum();
+                }
+                if (moveUp(eindY, beginY)) {
+                    eindY = kranenToDoAssignment.get(i).getY_minimum();
+                } else if (moveDown(eindY, beginY)) {
+                    eindY = kranenToDoAssignment.get(i).getY_maximum();
+                }
+                for (int j = 0; j < slots.size(); j++) {
+                    if (Math.floor(eindX) == slots.get(j).getX() && slots.get(j).getY() == Math.floor(eindY)) {
+                        int helft = (int) Math.floor(assignmentSlots.size() / 2.0);
+                        for (int k = -helft; k < assignmentSlots.size() - helft; k++) {
+                            toegewezenSlots.add(slots.get(j + k));
+                        }
+                    }
+                }
+            }
+            tijd = zetKranenOpzij(kranen, kranenToDoAssignment.get(i), beginX, eindX, tijd, trajecten);
+            System.out.println("container id  " + container.getId() + " " + assignmentSlots.get(0).getId());
+            verplaatsContainer(container, slots, toegewezenSlots, checkerBoard);
+            double startPickupTime = berekenPickup(kranenToDoAssignment.get(i), positiePickupX, positiePickupY, tijd);
+            double endPickupTime = startPickupTime + berekenVerplaatsing(kranenToDoAssignment.get(i), positiePickupX, positiePickupY, eindX, eindY);
+            Traject traject = new Traject(kranenToDoAssignment.get(i).getX_coordinaat(), kranenToDoAssignment.get(i).getY_coordinaat(),
+                    tijd, positiePickupX, positiePickupY, eindX, eindY, startPickupTime, endPickupTime, kranenToDoAssignment.get(i), container.getId());
+            kranenToDoAssignment.get(i).setX_coordinaat(eindX);
+            kranenToDoAssignment.get(i).setY_coordinaat(eindY);
+            tijd = endPickupTime;
+            trajecten.add(traject);
+
+            System.out.println("*********");
+            beginY = eindY;
+            beginX = eindX;
+        }
+    }
+
+    public static boolean checkSameHeight(ArrayList<Slot> slots) {
+        int hoogte = slots.get(0).getHoogte();
+        for (Slot slot: slots) {
+            if (slot.getHoogte() != hoogte) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public static boolean checkHeight(ArrayList<Slot> slots, int heigth) {
+        for (Slot slot : slots) {
+            if (slot.getHoogte() + 1 > heigth) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public static boolean checkContainersUnder(Slot slotBegin, Slot slotEind) {
+        if (slotBegin.getHoogte() != 0) {
+            Container containerBegin = slotBegin.getStack().get(slotBegin.getHoogte() - 1);
+            Container containerEind = slotEind.getStack().get(slotEind.getHoogte() - 1);
+            if (containerBegin.getStart() == slotBegin && containerEind.getEind() == slotEind) {
+                return true;
+            }
+        } else {
+            return true; //voor wanneer er geen container onderstaat
+        }
+        return false;
+    }
+
 }
