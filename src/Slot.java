@@ -46,4 +46,8 @@ public class Slot {
     public Stack<Container> getStack() {
         return hoogte;
     }
+
+    public Container getContainer(int i) {
+        return hoogte.get(i);
+    }
 }
