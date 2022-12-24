@@ -752,10 +752,12 @@ public class Main {
             toegewezenSlots = new ArrayList<>(assignmentSlots);
             if (kranenToDoAssignment.get(i).getX_minimum() > eindX || kranenToDoAssignment.get(i).getX_maximum() < eindX) {
                 toegewezenSlots.clear();
-                /*if (kranenToDoAssignment.get(i) != kranenToDoAssignment.get(kranenToDoAssignment.size())) {
-                    findSlot(kranenToDoAssignment.get(i), kranenToDoAssignment.get(i+1), slots, container);
-                }*/
-                if (moveLeft(eindX, beginX)) {
+                if (kranenToDoAssignment.get(i) != kranenToDoAssignment.get(kranenToDoAssignment.size()-1)) {
+                    Slot slot = findSlot(kranenToDoAssignment.get(i), kranenToDoAssignment.get(i+1), slots, container);
+                    eindX = slot.getX() + (container.getLengte() / 2.0);
+                    eindY = slot.getY() + 0.5; //hier plus he? niet min
+                }
+                /*if (moveLeft(eindX, beginX)) {
                     eindX = kranenToDoAssignment.get(i).getX_minimum()+0.5;
                 } else if (moveRight(eindX, beginX)) {
                     eindX = kranenToDoAssignment.get(i).getX_maximum()-0.5;
@@ -764,7 +766,7 @@ public class Main {
                     eindY = kranenToDoAssignment.get(i).getY_minimum()+0.5;
                 } else if (moveDown(eindY, beginY)) {
                     eindY = kranenToDoAssignment.get(i).getY_maximum()-0.5;
-                }
+                }*/
                 for (int j = 0; j < slots.size(); j++) {
                     System.out.println(slots.get(j).getY() + " " + eindY);
                     if (Math.floor(eindX) == slots.get(j).getX() && slots.get(j).getY() == Math.floor(eindY)) {
@@ -793,7 +795,7 @@ public class Main {
         }
     }
 
-    /*public static Slot findSlot(Kraan kraan1, Kraan kraan2, ArrayList<Slot> slots, Container container) {
+    public static Slot findSlot(Kraan kraan1, Kraan kraan2, ArrayList<Slot> slots, Container container) {
         Slot besteSlot = new Slot(-1, -1);
         double minX = Math.min(kraan1.getX_minimum(), kraan2.getX_minimum());
         double maxX = Math.max(kraan1.getX_maximum(), kraan2.getX_maximum());
@@ -806,11 +808,22 @@ public class Main {
             }
         }
 
-        for (Slot slot: slotsInsideArea) {
-            if ()
+        ArrayList<Slot> sloten = new ArrayList<>();
+        for (int i = 0; i < slotsInsideArea.size(); i++) {
+            sloten.clear();
+            if (slotsInsideArea.get(i).getX() + container.getLengte() <= maxX) {
+                for (int j = 0; j < container.getLengte(); j++) {
+                    sloten.add(slotsInsideArea.get(i + j));
+                }
+                if (checkSameHeight(sloten) && checkHeight(sloten, container.getStart().getHoogte()) && checkContainersUnder(sloten.get(0), sloten.get(sloten.size() - 1))) {
+                    besteSlot = slotsInsideArea.get(i);
+                    break;
+                }
+            }
         }
+        return besteSlot;
 
-    }*/
+    }
 
     public static boolean checkSameHeight(ArrayList<Slot> slots) {
         int hoogte = slots.get(0).getHoogte();
