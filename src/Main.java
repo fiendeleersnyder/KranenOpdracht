@@ -160,19 +160,22 @@ public class Main {
                 //********* CONTAINER MET LENGTE 1 *********
                 if (container.getLengte() == 1) {
                     if (!legeSlots.isEmpty()) {
-                        //dichtsbijzijnde slot vinden
                         int X = container.getStart().getX();
                         int Y = container.getStart().getY();
+                        Slot dichtsteBij = findStandAloneSlot(legeSlots, slots, length, X, Y);
+                        //in het geval dat er geen standalone slot is
+                        if (dichtsteBij.getX() == -1) {
+                            //dichtsbijzijnde slot vinden
+                            int kortsteAfstand = Integer.MAX_VALUE;
+                            dichtsteBij = legeSlots.get(0);
+                            for (Slot slot : legeSlots) {
+                                int x_verplaatsing = Math.abs(X - slot.getX());
+                                int y_verplaatsing = Math.abs(Y - slot.getY());
 
-                        int kortsteAfstand = Integer.MAX_VALUE;
-                        Slot dichtsteBij = legeSlots.get(0);
-                        for (Slot slot : legeSlots) {
-                            int x_verplaatsing = Math.abs(X - slot.getX());
-                            int y_verplaatsing = Math.abs(Y - slot.getY());
-
-                            if (Math.max(x_verplaatsing, y_verplaatsing) < kortsteAfstand) {
-                                kortsteAfstand = Math.max(x_verplaatsing, y_verplaatsing);
-                                dichtsteBij = slot;
+                                if (Math.max(x_verplaatsing, y_verplaatsing) < kortsteAfstand) {
+                                    kortsteAfstand = Math.max(x_verplaatsing, y_verplaatsing);
+                                    dichtsteBij = slot;
+                                }
                             }
                         }
                         //slot gevonden, nu kraan zoeken om verplaatsing te doen
@@ -186,7 +189,7 @@ public class Main {
 
                         ArrayList<Slot> sloten = new ArrayList<>();
                         sloten.add(dichtsteBij);
-                        // TODO: moeten kranen nog uit de weg worden gezet?
+
                         doAssignment(positiePickupX, positiePickupY, kranenToDoAssignment, positieEindX, positieEindY, tijd, slots, sloten, kranen, trajecten, container, checkerBoard);
                         legeSlots.remove(dichtsteBij);
                         verplaatsteContainers.add(container);
@@ -211,22 +214,24 @@ public class Main {
                             }
                         }
 
-                        //slot gevonden, nu kraan zoeken om verplaatsing te doen
-                        ArrayList<Kraan> kranenToDoAssigment = new ArrayList<>();
-                        findCranes(X, Y, vrijSlot.getX(), vrijSlot.getY(), kranen, kranenToDoAssigment);
-
-                        double positiePickupX = X + (container.getLengte() / 2.0);
-                        double positiePickupY = Y + 0.5;
-
-                        double positieEindX = vrijSlot.getX() + (container.getLengte() / 2.0);
-                        double positieEindY = vrijSlot.getY() + 0.5;
-
                         ArrayList<Slot> sloten = new ArrayList<>();
                         sloten.add(vrijSlot);
-                        // TODO: moeten kranen nog uit de weg worden gezet?
-                        doAssignment(positiePickupX, positiePickupY, kranenToDoAssigment, positieEindX, positieEindY, tijd, slots, sloten, kranen, trajecten, container, checkerBoard);
-                        legeSlots.remove(vrijSlot);
-                        verplaatsteContainers.add(container);
+
+                        if (checkSameHeight(sloten) && checkHeight(sloten, finalTargetHeight) && checkContainersUnder(sloten.get(0), sloten.get(sloten.size() - 1))) {
+                            //slot gevonden, nu kraan zoeken om verplaatsing te doen
+                            ArrayList<Kraan> kranenToDoAssigment = new ArrayList<>();
+                            findCranes(X, Y, vrijSlot.getX(), vrijSlot.getY(), kranen, kranenToDoAssigment);
+
+                            double positiePickupX = X + (container.getLengte() / 2.0);
+                            double positiePickupY = Y + 0.5;
+
+                            double positieEindX = vrijSlot.getX() + (container.getLengte() / 2.0);
+                            double positieEindY = vrijSlot.getY() + 0.5;
+
+                            doAssignment(positiePickupX, positiePickupY, kranenToDoAssigment, positieEindX, positieEindY, tijd, slots, sloten, kranen, trajecten, container, checkerBoard);
+                            legeSlots.remove(vrijSlot);
+                            verplaatsteContainers.add(container);
+                        }
                     }
                 } else {
                     //********* CONTAINER MET LENGTE != 1 *********
@@ -239,17 +244,19 @@ public class Main {
                     ArrayList<Slot> mogelijkeSloten = new ArrayList<>();
                     slots.sort(Comparator.comparing(Slot::getId));
                     boolean placed = false;
+                    boolean freePlaceOnground = false;
 
                     //******** HIER EERST OOK IF LEGESLOTS IS NIET LEEG TOEPASSEN ********
-                    if(!legeSlots.isEmpty()){
-                        int X = container.getStart().getX();
-                        int Y = container.getStart().getY();
-
+                    if (!legeSlots.isEmpty()) {
                         for (Slot slot : legeSlots) {
                             mogelijkeSloten.clear();
                             if (slot.getX() + container.getLengte() <= lengte - 1) {
                                 for (int i = slot.getId(); i < slot.getId() + container.getLengte(); i++) {
-                                    mogelijkeSloten.add(slots.get(i));
+                                    if (legeSlots.contains(slots.get(i))) {
+                                        mogelijkeSloten.add(slots.get(i));
+                                        freePlaceOnground = true;
+
+                                    }
                                 }
                             }
                         }
