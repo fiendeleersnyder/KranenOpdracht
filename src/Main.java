@@ -108,7 +108,7 @@ public class Main {
         b.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                setStartPositie(assignments, containers, CheckerBoard);
+                setStartPosition(assignments, containers, CheckerBoard);
             }
         });
         legende.add(b);
@@ -133,7 +133,7 @@ public class Main {
         b2.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                schrijfOutput(trajecten, finalName);
+                writeOutput(trajecten, finalName);
             }
         });
         legende.add(b2);
@@ -152,7 +152,7 @@ public class Main {
         ArrayList<Container> teHogeContainers = vindTeHogeContainers(slots, finalTargetHeight);
         teHogeContainers.sort(Comparator.comparing(Container::getLengte));
 
-        ArrayList<Slot> legeSlots = vindLegeSlots(slots, lengte);
+        ArrayList<Slot> legeSlots = findEmptySlots(slots, lengte);
         ArrayList<Container> verplaatsteContainers = new ArrayList<>();
 
         while (!teHogeContainers.isEmpty()) {
@@ -177,7 +177,7 @@ public class Main {
                         }
                         //slot gevonden, nu kraan zoeken om verplaatsing te doen
                         ArrayList<Kraan> kranenToDoAssignment = new ArrayList<>();
-                        vindKranen(X, Y, dichtsteBij.getX(), dichtsteBij.getY(), kranen, kranenToDoAssignment);
+                        findCranes(X, Y, dichtsteBij.getX(), dichtsteBij.getY(), kranen, kranenToDoAssignment);
                         double positiePickupX = X + (container.getLengte() / 2.0);
                         double positiePickupY = Y + 0.5;
 
@@ -186,13 +186,13 @@ public class Main {
 
                         ArrayList<Slot> sloten = new ArrayList<>();
                         sloten.add(dichtsteBij);
-
+                        // TODO: moeten kranen nog uit de weg worden gezet?
                         doAssignment(positiePickupX, positiePickupY, kranenToDoAssignment, positieEindX, positieEindY, tijd, slots, sloten, kranen, trajecten, container, checkerBoard);
                         legeSlots.remove(dichtsteBij);
                         verplaatsteContainers.add(container);
 
                     } else {
-                        //containers op een andere container van 1 plaatsen
+                        //overige containers op een andere container van 1 plaatsen
                         int X = container.getStart().getX();
                         int Y = container.getStart().getY();
                         Slot vrijSlot = container.getStart();
@@ -201,6 +201,7 @@ public class Main {
                                 vrijSlot = slot;
                                 break;
                             } else {
+                                //TODO: random containers verplaasten
                                 //in het geval dat er nergens plek hebt om 1'tje op te zetten
                                 //miss functie random verplaatsen oproepen?
                                 //vb kijken of er een container van lengte 2 onderaan staat, deze verplaatsten net als mogelijk bovenstaanden
@@ -212,7 +213,7 @@ public class Main {
 
                         //slot gevonden, nu kraan zoeken om verplaatsing te doen
                         ArrayList<Kraan> kranenToDoAssigment = new ArrayList<>();
-                        vindKranen(X, Y, vrijSlot.getX(), vrijSlot.getY(), kranen, kranenToDoAssigment);
+                        findCranes(X, Y, vrijSlot.getX(), vrijSlot.getY(), kranen, kranenToDoAssigment);
 
                         double positiePickupX = X + (container.getLengte() / 2.0);
                         double positiePickupY = Y + 0.5;
@@ -222,7 +223,7 @@ public class Main {
 
                         ArrayList<Slot> sloten = new ArrayList<>();
                         sloten.add(vrijSlot);
-
+                        // TODO: moeten kranen nog uit de weg worden gezet?
                         doAssignment(positiePickupX, positiePickupY, kranenToDoAssigment, positieEindX, positieEindY, tijd, slots, sloten, kranen, trajecten, container, checkerBoard);
                         legeSlots.remove(vrijSlot);
                         verplaatsteContainers.add(container);
@@ -238,35 +239,68 @@ public class Main {
                     ArrayList<Slot> mogelijkeSloten = new ArrayList<>();
                     slots.sort(Comparator.comparing(Slot::getId));
                     boolean placed = false;
-                    for (Slot slot : slots) {
-                        mogelijkeSloten.clear();
-                        if (slot.getX() + container.getLengte() <= lengte - 1) {
-                            //checken als hier wel het juiste slot wordt gepakt
-                            for (int i = slot.getId(); i < slot.getId() + container.getLengte(); i++) {
-                                mogelijkeSloten.add(slots.get(i));
+
+                    //******** HIER EERST OOK IF LEGESLOTS IS NIET LEEG TOEPASSEN ********
+                    if(!legeSlots.isEmpty()){
+                        int X = container.getStart().getX();
+                        int Y = container.getStart().getY();
+
+                        for (Slot slot : legeSlots) {
+                            mogelijkeSloten.clear();
+                            if (slot.getX() + container.getLengte() <= lengte - 1) {
+                                for (int i = slot.getId(); i < slot.getId() + container.getLengte(); i++) {
+                                    mogelijkeSloten.add(slots.get(i));
+                                }
                             }
-                            //checken of de hoogte van elke slot wel dezelfde is & of hoogte + 1 <= target is & of hij erop mag
-                            if (checkSameHeight(mogelijkeSloten) && checkHeight(mogelijkeSloten, finalTargetHeight) && checkContainersUnder(mogelijkeSloten.get(0), mogelijkeSloten.get(mogelijkeSloten.size()))) {
-                                int X = container.getStart().getX();
-                                int Y = container.getStart().getY();
+                        }
+                        //TODO: MOET DIT BINNEN DE FORLOOP VAN SLOTS? ik denk van niet
+                        double positiePickupX = X + (container.getLengte() / 2.0);
+                        double positiePickupY = Y + 0.5;
 
-                                double positiePickupX = X + (container.getLengte() / 2.0);
-                                double positiePickupY = Y + 0.5;
+                        double positieEindX = mogelijkeSloten.get(0).getX() + (container.getLengte() / 2.0);
+                        double positieEindY = mogelijkeSloten.get(0).getY() + 0.5;
 
-                                double positieEindX = slot.getX() + (container.getLengte() / 2.0);
-                                double positieEindY = slot.getY() + 0.5;
+                        ArrayList<Kraan> kranenToDoAssigment = new ArrayList<>();
+                        findCranes(X,Y, mogelijkeSloten.get(0).getX(), mogelijkeSloten.get(0).getY(), kranen, kranenToDoAssigment);
+                        // TODO: moeten kranen nog uit de weg worden gezet?
+                        doAssignment(positiePickupX, positiePickupY, kranenToDoAssigment, positieEindX, positieEindY, tijd, slots, mogelijkeSloten, kranen, trajecten, container, checkerBoard);
+                        for(Slot s: mogelijkeSloten){
+                            legeSlots.remove(s);
+                        }
+                        verplaatsteContainers.add(container);
+                    } else{
+                        //******** INDIEN ER GEEN LEGE SLOTEN MEER OP DE GROND ZIJN ********
+                        for (Slot slot : slots) {
+                            mogelijkeSloten.clear();
+                            if (slot.getX() + container.getLengte() <= lengte - 1) {
+                                //TODO:checken als hier wel het juiste slot wordt gepakt
+                                for (int i = slot.getId(); i < slot.getId() + container.getLengte(); i++) {
+                                    mogelijkeSloten.add(slots.get(i));
+                                }
+                                //controleren of de hoogte van elke slot wel dezelfde is & of hoogte + 1 <= target is & of hij erop mag
+                                if (checkSameHeight(mogelijkeSloten) && checkHeight(mogelijkeSloten, finalTargetHeight) && checkContainersUnder(mogelijkeSloten.get(0), mogelijkeSloten.get(mogelijkeSloten.size()))) {
+                                    int X = container.getStart().getX();
+                                    int Y = container.getStart().getY();
 
-                                ArrayList<Kraan> kranenToDoAssigment = new ArrayList<>();
-                                vindKranen(X,Y, slot.getX(), slot.getY(), kranen, kranenToDoAssigment);
+                                    double positiePickupX = X + (container.getLengte() / 2.0);
+                                    double positiePickupY = Y + 0.5;
 
-                                doAssignment(positiePickupX, positiePickupY, kranenToDoAssigment, positieEindX, positieEindY, tijd, slots, mogelijkeSloten, kranen, trajecten, container, checkerBoard);
-                                verplaatsteContainers.add(container);
-                                placed = true;
-                                break;
+                                    double positieEindX = slot.getX() + (container.getLengte() / 2.0);
+                                    double positieEindY = slot.getY() + 0.5;
+
+                                    ArrayList<Kraan> kranenToDoAssigment = new ArrayList<>();
+                                    findCranes(X,Y, slot.getX(), slot.getY(), kranen, kranenToDoAssigment);
+                                    // TODO: moeten kranen nog uit de weg worden gezet?
+                                    doAssignment(positiePickupX, positiePickupY, kranenToDoAssigment, positieEindX, positieEindY, tijd, slots, mogelijkeSloten, kranen, trajecten, container, checkerBoard);
+                                    verplaatsteContainers.add(container);
+                                    placed = true;
+                                    break;
+                                }
                             }
                         }
                     }
-                    //hier wanneer er geen slot gevonden is
+
+                    //TODO: hier wanneer er geen slot gevonden is
                     if (!placed) {
                         System.out.println("DE CONTAINER HEEFT GEEN PLAATS, VERPLAATS ANDERE CONTAINERS");
                     }
@@ -292,7 +326,7 @@ public class Main {
         return teHogeContainers;
     }
 
-    public static ArrayList<Slot> vindLegeSlots(ArrayList<Slot> slots, int lengte) {
+    public static ArrayList<Slot> findEmptySlots(ArrayList<Slot> slots, int lengte) {
         ArrayList<Slot> legeSlots = new ArrayList<>();
         for (Slot slot: slots) {
             if (slot.getHoogte()==0) {
@@ -318,7 +352,7 @@ public class Main {
         return legeSlots;
     }
 
-    private static void schrijfOutput(ArrayList<Traject> trajecten, String name) {
+    private static void writeOutput(ArrayList<Traject> trajecten, String name) {
         try{
             FileWriter fileWriter = new FileWriter(name + "output.txt");
             fileWriter.write("CraneId;ContainerId;PickupTime;EndTime;CranePickupPosX;CranePickupPosY;CraneEndPosX;CraneEndPosY;" +"\n");
@@ -396,7 +430,7 @@ public class Main {
         assignement.add(assignment);
    }
 
-   private static void setStartPositie(ArrayList<Assignment> assignments, ArrayList<Container> containers, CheckerBoard checkerboard) {
+   private static void setStartPosition(ArrayList<Assignment> assignments, ArrayList<Container> containers, CheckerBoard checkerboard) {
        containers.sort(Comparator.comparing(Container::getLengte));
 
        ArrayList<Slot> slotlist;
@@ -488,7 +522,7 @@ public class Main {
                    double positieEindY = assignment.getSlots().get(0).getY() + 0.5;
                    double positieBeginX = positiePickupX;
                    double positieBeginY = positiePickupY;
-                   vindKranen(positieBeginX, positieBeginY, positieEindX, positieEindY, kranen, kranenToDoAssignment);
+                   findCranes(positieBeginX, positieBeginY, positieEindX, positieEindY, kranen, kranenToDoAssignment);
                    doAssignment(positiePickupX, positiePickupY, kranenToDoAssignment, positieEindX, positieEindY, tijd, slots, assignment.getSlots(), kranen, trajecten, container, checkerBoard);
                    executed_assignments.add(assignment);
                }
@@ -545,7 +579,7 @@ public class Main {
         return false;
     }
 
-    public static double zetKranenOpzij(ArrayList<Kraan> kranen, Kraan kraan, double beginX, double eindX, double tijd, ArrayList<Traject> trajecten) {
+    public static double moveCranes(ArrayList<Kraan> kranen, Kraan kraan, double beginX, double eindX, double tijd, ArrayList<Traject> trajecten) {
         for(Kraan andereKraan: kranen){
             if (!Objects.equals(andereKraan, kraan)) {
                 if (moveLeft(eindX, beginX)) {
@@ -632,7 +666,7 @@ public class Main {
     return tijd;
     }
 
-    public static void vindKranen(double positieBeginX, double positieBeginY, double positieEindX, double positieEindY, ArrayList<Kraan> kranen, ArrayList<Kraan> kranenToDoAssignment) {
+    public static void findCranes(double positieBeginX, double positieBeginY, double positieEindX, double positieEindY, ArrayList<Kraan> kranen, ArrayList<Kraan> kranenToDoAssignment) {
         double eindeX = positieEindX;
         double eindeY = positieEindY;
         for (Kraan kraan: kranen) {
@@ -700,7 +734,7 @@ public class Main {
                     }
                 }
             }
-            tijd = zetKranenOpzij(kranen, kranenToDoAssignment.get(i), beginX, eindX, tijd, trajecten);
+            tijd = moveCranes(kranen, kranenToDoAssignment.get(i), beginX, eindX, tijd, trajecten);
             System.out.println("container id  " + container.getId() + " " + assignmentSlots.get(0).getId());
             verplaatsContainer(container, slots, toegewezenSlots, checkerBoard);
             double startPickupTime = berekenPickup(kranenToDoAssignment.get(i), positiePickupX, positiePickupY, tijd);
